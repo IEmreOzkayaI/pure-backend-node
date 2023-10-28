@@ -68,7 +68,7 @@ const register = async (_req, _res) => {
 			send_email("ozthefur@gmail.com", "Confirm account 🤕", "confirm_account", confirm_credential);
 			//------------------
 			console.info(chalk.green.bold(`${getTimestamp()} Status Code : 201 -- Info : User Created -- ID : ${user_registered._id}`));
-			_res.cookie("confirm_token", confirm_token, {maxAge: 60 * 60, secure: true})
+			_res.cookie("confirm_token", confirm_token, {httpOnly: true, maxAge: 60 * 60, secure: true, SameSite :"None"})
 			return _res.status(201).json({message: "User Created , Please Confirm Your Email"});
 		} catch (error) {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Invalid User Data -- Service : Register`));
