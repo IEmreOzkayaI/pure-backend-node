@@ -65,10 +65,11 @@ const register = async (_req, _res) => {
 			if (!verification_code) throw new Error();
 			//------------------
 			const confirm_token = jwt.sign({_id: user_registered._id, role: _req.body.role}, process.env.CONFIRM_TOKEN_SECRET, {expiresIn: "1h"});
-			// send_email("0emre.ozkaya0@gmail.com", "Confirm account 🤕", "confirm_account", confirm_credential);
+			// send_email("ozthefur@gmail.com", "Confirm account 🤕", "confirm_account", confirm_credential);
 			//------------------
 			console.info(chalk.green.bold(`${getTimestamp()} Status Code : 201 -- Info : User Created -- ID : ${user_registered._id}`));
-			return _res.status(201).json({message: "User Created , Please Confirm Your Email", confirm_token});
+			_res.cookie("jwt", confirm_token, {httpOnly: true, maxAge: 60 * 60, secure: true})
+			return _res.status(201).json({message: "User Created , Please Confirm Your Email"});
 		} catch (error) {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Invalid User Data -- Service : Register`));
 			return _res.status(400).json({message: "Invalid User Data"});
