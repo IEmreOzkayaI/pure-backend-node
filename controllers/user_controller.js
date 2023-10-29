@@ -10,7 +10,7 @@ import Verification from "../models/verification_model.js";
 import getTimestamp from "../utils/time_stamp.js";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
-dotenv.config()
+dotenv.config();
 
 // @desc    Register a new user
 // @route   POST /api/user/register
@@ -65,11 +65,11 @@ const register = async (_req, _res) => {
 			if (!verification_code) throw new Error();
 			//------------------
 			const confirm_token = jwt.sign({_id: user_registered._id, role: _req.body.role}, process.env.CONFIRM_TOKEN_SECRET, {expiresIn: "1h"});
-			send_email("ozthefur@gmail.com", "Confirm account 🤕", "confirm_account", confirm_credential);
+			send_email("0emre.ozkaya0@gmail.com", "Confirm account 🤕", "confirm_account", confirm_credential);
 			//------------------
 			console.info(chalk.green.bold(`${getTimestamp()} Status Code : 201 -- Info : User Created -- ID : ${user_registered._id}`));
-			_res.cookie("confirm_token", confirm_token, {httpOnly: true, maxAge: 60 * 60, secure: true, SameSite :"None"})
-			return _res.status(201).json({message: "User Created , Please Confirm Your Email"});
+			const confirm_url = `/confirm/${confirm_token}`;
+			return _res.status(201).json({message: "User Created , Please Confirm Your Email", confirm_url});
 		} catch (error) {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Invalid User Data -- Service : Register`));
 			return _res.status(400).json({message: "Invalid User Data"});
@@ -179,9 +179,11 @@ const re_validate = async (_req, _res) => {
 			if (!verification_code) throw new Error();
 			//------------------
 			const confirm_token = jwt.sign({_id: confirm_user._id, role: confirm_user.role}, process.env.CONFIRM_TOKEN_SECRET, {expiresIn: "1h"}); //TODO: Can change , WE CAN NOT GIVE A NEW TOKEN BECAUSE ALREADY HAS TIME
-			// send_email("0emre.ozkaya0@gmail.com", "Confirm account 🤕", "confirm_account", confirm_credential);
+			send_email("0emre.ozkaya0@gmail.com", "Confirm account 🤕", "confirm_account", confirm_credential);
 			console.info(chalk.green.bold(`${getTimestamp()} Status Code : 200 -- Info : User Verified -- ID : ${confirm_user._id}`));
-			return _res.status(200).json({message: "Validate Token , resend please confirm", confirm_token});
+			//TODO: CAN CHANGE BECAUSE OF URL WE CAN GİVE AN REFRESH TOKEN ALSO FOR CONFIRM STEP AND THEN DELETE THEM. BUT NOW WE USE THIS
+			const confirm_url = `/confirm/${confirm_token}`;
+			return _res.status(200).json({message: "Validate Token , resend please confirm", confirm_url});
 		} catch (error) {
 			console.log(error);
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User Verification -- Service : Re-Validate`));
@@ -237,7 +239,7 @@ const login = async (_req, _res) => {
 			const auth_result = await Auth.create(current_user);
 			if (!auth_result) throw new Error();
 			console.info(chalk.green.bold(`${getTimestamp()} Status Code : 200 -- Info : User Authenticated -- ID : ${is_user_available._id}`));
-			_res.cookie("jwt", refresh_token, {httpOnly: true, maxAge: 1000 * 60 * 60 * 24, secure: true});
+			_res.cookie("refresh_token", refresh_token, {httpOnly: true, maxAge: 60 * 60 * 1000 * 24, secure: true, SameSite: "None"});
 			return _res.status(200).json({access_token});
 		} catch (error) {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Invalid Auth Data -- Service : Login`));
@@ -306,7 +308,7 @@ const forgot_password = async (_req, _res) => {
 		};
 		const reset_token = jwt.sign(payload, secret, {expiresIn: "15m"});
 		//----- Create Reset Password Magic URL
-		const reset_password_url = `http://localhost:3000/api/user/reset-password/${reset_token}/${is_user_available.email}`;
+		const reset_password_url = `/api/user/reset-password/${reset_token}/${is_user_available.email}`;
 		try {
 			// const email_status = send_email("0emre.ozkaya0@gmail.com", "Forgot Password 😱", "forgot_password", reset_password_url);
 			// const email_status = send_email(is_user_available.email, "Forgot Password 😱", reset_password_url);
