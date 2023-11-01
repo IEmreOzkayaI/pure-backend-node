@@ -8,7 +8,8 @@ const cors_options = {
             callback(new Error('Not allowed by CORS'));
         }
     },
-    optionsSuccessStatus: 200
+    optionsSuccessStatus: 200,
+    credentials:true
 }
 
 export default cors_options;
