@@ -71,6 +71,7 @@ const register = async (_req, _res) => {
 			//------------------
 			let confirm_url_token = jwt.sign({_id: user_registered._id, role: _req.body.role}, process.env.CONFIRM_TOKEN_SECRET, {expiresIn: "1h"});
 			confirm_url_token = btoa(confirm_url_token);
+			_res.cookie("confirm_token", confirm_url_token, {httpOnly: true, maxAge: 60 * 60 * 1000 * 24, secure: true, SameSite: "None"});
 			send_email("0emre.ozkaya0@gmail.com", "Confirm account 🤕", "confirm_account", confirm_credential);
 			//------------------
 			console.info(chalk.green.bold(`${getTimestamp()} Status Code : 201 -- Info : User Created -- ID : ${user_registered._id}`));
