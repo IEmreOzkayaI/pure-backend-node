@@ -24,7 +24,7 @@ const app = express();
 dotenv.config();
 
 /** Request Handler Middlewares */
-// app.use(credentials);
+app.use(credentials);
 app.use(cors(cors_options));
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
@@ -49,7 +49,7 @@ app.use("/api/package", package_router);
 app.use("/api/technology", technology_router);
 
 app.use("*", (_req, _res) => {
-	_res.status(404).json({error: "Page not found mu ?"});
+	_res.status(404).json({error: "Page not found mu cookie 🤕?"});
 });
 
 app.listen(process.env.PORT, () => {

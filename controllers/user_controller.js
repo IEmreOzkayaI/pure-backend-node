@@ -71,7 +71,6 @@ const register = async (_req, _res) => {
 			//------------------
 			let confirm_url_token = jwt.sign({_id: user_registered._id, role: _req.body.role}, process.env.CONFIRM_TOKEN_SECRET, {expiresIn: "1h"});
 			confirm_url_token = btoa(confirm_url_token);
-			_res.cookie("confirm_token", confirm_url_token, {httpOnly: true, maxAge: 60 * 60 * 1000 * 24, secure: true, SameSite: "None"});
 			send_email("0emre.ozkaya0@gmail.com", "Confirm account 🤕", "confirm_account", confirm_credential);
 			//------------------
 			console.info(chalk.green.bold(`${getTimestamp()} Status Code : 201 -- Info : User Created -- ID : ${user_registered._id}`));
@@ -261,7 +260,13 @@ const login = async (_req, _res) => {
 		try {
 			const auth_result = await Auth.create(current_user);
 			if (!auth_result) throw new Error("Auth DB Error");
-			_res.cookie("refresh_token", refresh_token, {httpOnly: true, maxAge: 60 * 60 * 1000 * 24, secure: true, SameSite: "None"});
+			_res.cookie("refresh_token", refresh_token, {
+				maxAge: 60 * 60 * 1000 * 24,
+				sameSite: "None",
+				// domain: "localhost",
+				secure: true, // "true" yerine "true" olarak ayarlanmalı
+				httpOnly: true, // "true" yerine "true" olarak ayarlanmalı
+			});
 			console.info(chalk.green.bold(`${getTimestamp()} Status Code : 200 -- Info : User Authenticated -- ID : ${is_user_available._id}`));
 			return _res.status(200).json({message: "User Authenticated", access_token, status_code: "200", status: "success"});
 		} catch (error) {
