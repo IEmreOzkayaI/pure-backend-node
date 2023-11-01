@@ -115,7 +115,7 @@ const confirm = async (_req, _res) => {
 			confirm_user = {_id: decoded._id, role: decoded.role};
 		});
 		if (!(_req.body.role !== "Company_User" || _req.body.role !== "Individual_User" || _req.body.role !== "Admin_User")) {
-			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User Role Not Found -- Service : Register`));
+			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User Role Not Found -- Service : Confirm`));
 			return _res.status(400).send({message: "User Profile Not Found", status_code: "400", status: "error"});
 		}
 		//----- DB Access Type Check
@@ -173,7 +173,7 @@ const re_validate = async (_req, _res) => {
 			confirm_user = {_id: decoded._id, role: decoded.role};
 		});
 		if (!(_req.body.role !== "Company_User" || _req.body.role !== "Individual_User" || _req.body.role !== "Admin_User")) {
-			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User Role Not Found -- Service : Register`));
+			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User Role Not Found -- Service : Re-Validate`));
 			return _res.status(400).send({message: "User Profile Not Found", status_code: "400", status: "error"});
 		}
 		//----- DB Access Type Check
@@ -219,11 +219,11 @@ const login = async (_req, _res) => {
 		let is_password_match = "";
 		//----- Profile Check
 		if (!(_req.body.role !== "Company_User" || _req.body.role !== "Individual_User" || _req.body.role !== "Admin_User")) {
-			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User Role Not Found -- Service : Register`));
+			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User Role Not Found -- Service : Login`));
 			return _res.status(400).send({message: "User Profile Not Found", status_code: "400", status: "error"});
 		}
 		if (_req.body.email === "" || _req.body.password === "") {
-			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Email or Password Not Found -- Service : Register`));
+			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Email or Password Not Found -- Service : Login`));
 			return _res.status(400).send({message: "Email or Password Not Found", status_code: "400", status: "error"});
 		}
 		//----- DB Access Type Check
@@ -313,11 +313,11 @@ const forgot_password = async (_req, _res) => {
 		let is_user_available = "";
 		//----- Profile Check
 		if (!(_req.body.role !== "Company_User" || _req.body.role !== "Individual_User" || _req.body.role !== "Admin_User")) {
-			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User Role Not Found -- Service : Register`));
+			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User Role Not Found -- Service : Forgot-Password`));
 			return _res.status(400).send({message: "User Profile Not Found", status_code: "400", status: "error"});
 		}
 		if (_req.body.email === "") {
-			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Email Not Found -- Service : Register`));
+			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Email Not Found -- Service : Forgot-Password`));
 			return _res.status(400).send({message: "Email Not Found", status_code: "400", status: "error"});
 		} //----- DB Access Type Check
 		if (_req.body.role === "Company_User") DB_access = Company_User;
@@ -379,11 +379,11 @@ const reset_password = async (_req, _res) => {
 		}
 		//-----
 		if (!(_req.body.role !== "Company_User" || _req.body.role !== "Individual_User" || _req.body.role !== "Admin_User")) {
-			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User Role Not Found -- Service : Register`));
+			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User Role Not Found -- Service : Forgot Password `));
 			return _res.status(400).send({message: "User Profile Not Found", status_code: "400", status: "error"});
 		}
 		if (_req.body.email === "" || _req.body.password === "") {
-			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Email or Password Not Found -- Service : Register`));
+			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Email or Password Not Found -- Service : Forgot Password `));
 			return _res.status(400).send({message: "Email or Password Not Found", status_code: "400", status: "error"});
 		}
 		//-----
@@ -424,7 +424,7 @@ const current = async (_req, _res) => {
 		let DB_access = "";
 		//-----
 		if (!(_req.body.role !== "Company_User" || _req.body.role !== "Individual_User" || _req.body.role !== "Admin_User")) {
-			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User Role Not Found -- Service : Register`));
+			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User Role Not Found -- Service : Current User`));
 			return _res.status(400).send({message: "User Profile Not Found", status_code: "400", status: "error"});
 		}
 		//-----
