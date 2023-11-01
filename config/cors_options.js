@@ -5,6 +5,7 @@ const cors_options = {
         if (allowed_origins.includes(origin) || !origin) {
             callback(null, true)
         } else {
+            console.log("origin",origin);
             callback(new Error('Not allowed by CORS'));
         }
     },

@@ -24,7 +24,7 @@ const app = express();
 dotenv.config();
 
 /** Request Handler Middlewares */
-app.use(credentials);
+// app.use(credentials);
 app.use(cors(cors_options));
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
