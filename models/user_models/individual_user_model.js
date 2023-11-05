@@ -39,7 +39,7 @@ const individual_user_schema = new mongoose.Schema({
 	register_type: {
 		type: String,
 		required: true,
-		default: "regular", // regular, premium
+		default: "regular", // free, premium , interview
 	},
 	notification_list: [
 		{
