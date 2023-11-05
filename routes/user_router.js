@@ -13,9 +13,9 @@ const login_account_limiter = rateLimit({
 });
 
 user_router.route("/register").post(user_controller.register);
-user_router.route("/login").post(user_controller.login);
+user_router.route("/log-in").post(user_controller.login);
 // user_router.route("/login").post(login_account_limiter,user_controller.login);
-user_router.route("/logout").get(validate_access_token_handler, user_controller.logout);
+user_router.route("/log-out").get(validate_access_token_handler, user_controller.logout);
 user_router.route("/forgot-password").post(user_controller.forgot_password);
 user_router.route("/reset-password/:reset_token/:email").post(user_controller.reset_password);
 user_router.route("/current").get(validate_access_token_handler, user_controller.current);
