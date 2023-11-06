@@ -26,8 +26,9 @@ dotenv.config();
 /** Request Handler Middlewares */
 app.use(credentials);
 app.use(cors(cors_options));
+app.use(express.urlencoded({extended: false}));
+app.use(express.text({ type: "text/plain" }));
 app.use(express.json());
-app.use(express.urlencoded({extended: true}));
 app.use(cookieParser());
 app.disable("x-powered-by");
 

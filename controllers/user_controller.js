@@ -1,6 +1,7 @@
 import Individual_User from "../models/user_models/individual_user_model.js";
 import Company_User from "../models/user_models/company_user_model.js";
 import Admin_User from "../models/user_models/admin_user_model.js";
+import Common_User from "../models/user_models/common_user_model.js";
 import Auth from "../models/auth_model.js";
 import jwt from "jsonwebtoken";
 import send_email from "../utils/send_email.js";
@@ -20,40 +21,45 @@ const register = async (_req, _res) => {
 		let DB_access = "";
 		let user_id_field = "";
 		//----- Profile Check
-		if (!(_req.body.role !== "Company_User" || _req.body.role !== "Individual_User" || _req.body.role !== "Admin_User")) {
-			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User Role Not Found -- Service : Register`));
-			return _res.status(400).send({message: "User Profile Not Found", status_code: "400", status: "error"});
-		}
 		if (_req.body.email === "" || _req.body.password === "") {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Email or Password Not Found -- Service : Register`));
 			return _res.status(400).send({message: "Email or Password Not Found", status_code: "400", status: "error"});
 		}
+
+		if (!(_req.body.role !== "Company_User" || _req.body.role !== "Individual_User" || _req.body.role !== "Admin_User")) {
+			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User Role Not Found -- Service : Register`));
+			return _res.status(400).send({message: "User Profile Not Found", status_code: "400", status: "error"});
+		}
+
 		if (_req.body.status !== undefined) {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Status Can Not Send -- Service : Register`));
 			return _res.status(400).send({message: "User status can not send specifically", status_code: "400", status: "error"});
 		}
-		//----- DB Access Type Check
-		if (_req.body.role === "Company_User") DB_access = Company_User;
-		if (_req.body.role === "Individual_User") DB_access = Individual_User;
-		if (_req.body.role === "Admin_User") DB_access = Admin_User;
-		//----- User Check
-		if (_req.body.role === "Company_User") user_id_field = "company_user_id";
-		if (_req.body.role === "Individual_User") user_id_field = "individual_user_id";
-		if (_req.body.role === "Admin_User") user_id_field = "admin_user_id";
+
 		try {
-			const is_user_available = await DB_access.findOne({email: _req.body.email});
+			const is_user_available = await Common_User.findOne({email: _req.body.email});
 			if (is_user_available) throw new Error("User Already Exists");
 		} catch (error) {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : ${error} -- Service : Register`));
 			return _res.status(400).json({message: "User Already Exists", status_code: "400", status: "error"});
 		}
+
+		//----- DB Access Type Check
+		if (_req.body.role === "Company_User") DB_access = Company_User;
+		if (_req.body.role === "Individual_User") DB_access = Individual_User;
+		if (_req.body.role === "Admin_User") DB_access = Admin_User;
+
+		//----- User Check
+		if (_req.body.role === "Company_User") user_id_field = "company_user_id";
+		if (_req.body.role === "Individual_User") user_id_field = "individual_user_id";
+		if (_req.body.role === "Admin_User") user_id_field = "admin_user_id";
+
 		//----- User Register
 		const user_register_info = {..._req.body};
 		delete user_register_info.role;
 
 		const user_register_info_password_bcrypt = await bcrypt.hash(_req.body.password, 10);
 		user_register_info.password = user_register_info_password_bcrypt;
-		//----- TODO: Mail sender service will be added later ,  for now there is no google account for company
 		//----- User Register to DB & Response
 		try {
 			//TODO: Mail gitmeyebilir tekrar al butonu atmamız gerekicek.
@@ -61,6 +67,7 @@ const register = async (_req, _res) => {
 			if (!user_registered) {
 				throw new Error("User Register Error");
 			}
+			await Common_User.create({email: _req.body.email, role: _req.body.role});
 			//------------------
 			const query = {};
 			query[user_id_field] = user_registered._id;
@@ -69,12 +76,12 @@ const register = async (_req, _res) => {
 
 			if (!verification_code) throw new Error("Verification Code Error");
 			//------------------
-			let confirm_url_token = jwt.sign({_id: user_registered._id, role: _req.body.role}, process.env.CONFIRM_TOKEN_SECRET, {expiresIn: "1h"});
+			let confirm_url_token = jwt.sign({_id: user_registered._id, role: _req.body.role}, process.env.CONFIRM_TOKEN_SECRET, {expiresIn: "5m"});
 			confirm_url_token = btoa(confirm_url_token);
-			send_email("0emre.ozkaya0@gmail.com", "Confirm account 🤕", "confirm_account", confirm_credential);
+			send_email(_req.body.email, "Confirm account 🤕", "confirm_account", confirm_credential);
 			//------------------
 			console.info(chalk.green.bold(`${getTimestamp()} Status Code : 201 -- Info : User Created -- ID : ${user_registered._id}`));
-			return _res.status(201).json({message: "User Created , Please Confirm Your Email", confirm_url_token, status_code: "201", status: "success"});
+			return _res.status(201).json({message: "User Created , Please Confirm Your Email", confirm_url_token, status_code: "201", status: "success", time: "5"});
 		} catch (error) {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : ${error} -- Service : Register`));
 			return _res.status(400).json({message: "Invalid User Data", status_code: "400", status: "error"});
@@ -90,12 +97,10 @@ const register = async (_req, _res) => {
 // @access  Public
 const confirm = async (_req, _res) => {
 	try {
-		console.log("GİRDİ BURDA", _req.body);
 		let DB_access = "";
 		let user_id_field = "";
 		let confirm_user = "";
 		let authHeader = _req.headers.Authorization || _req.headers.authorization;
-		console.log("GİRDİ BURDA", authHeader);
 		if (!authHeader || !authHeader.startsWith("Bearer")) {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : No confirm token -- Service : confirm_access_token`));
 			return _res.status(400).json({message: "Not confirm , No confirm token", status_code: "400", status: "error"});
@@ -113,7 +118,8 @@ const confirm = async (_req, _res) => {
 			// If the token is valid, set the user in the request and proceed to the next middleware
 			confirm_user = {_id: decoded._id, role: decoded.role};
 		});
-		if (!(_req.body.role !== "Company_User" || _req.body.role !== "Individual_User" || _req.body.role !== "Admin_User")) {
+
+		if (!(confirm_user.role !== "Company_User" || confirm_user.role !== "Individual_User" || confirm_user.role !== "Admin_User")) {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User Role Not Found -- Service : Confirm`));
 			return _res.status(400).send({message: "User Profile Not Found", status_code: "400", status: "error"});
 		}
@@ -121,18 +127,23 @@ const confirm = async (_req, _res) => {
 		if (confirm_user.role === "Company_User") user_id_field = "company_user_id";
 		if (confirm_user.role === "Individual_User") user_id_field = "individual_user_id";
 		if (confirm_user.role === "Admin_User") user_id_field = "admin_user_id";
+
 		//----- User Check
 		if (confirm_user.role === "Company_User") DB_access = Company_User;
 		if (confirm_user.role === "Individual_User") DB_access = Individual_User;
 		if (confirm_user.role === "Admin_User") DB_access = Admin_User;
+
 		try {
 			const query = {};
 			query[user_id_field] = confirm_user._id;
-			let validate_user = await Verification.findOne({...query, verification_code: _req.body.confirm_credential});
+
+			const validate_user = await Verification.findOne({...query, verification_code: _req.body});
 			if (!validate_user) throw new Error("Verification Code DB Search Error");
-			if (validate_user.verification_code !== _req.body.confirm_credential) throw new Error("Verification Code Not Match");
-			await Verification.deleteOne({user_id_field: confirm_user._id});
+			if (validate_user.verification_code !== _req.body) throw new Error("Verification Code Not Match");
+
+			await Verification.deleteOne({...query});
 			await DB_access.updateOne({_id: confirm_user._id}, {status: "ACTIVE"});
+
 			console.info(chalk.green.bold(`${getTimestamp()} Status Code : 200 -- Info : User Verified -- ID : ${confirm_user._id}`));
 			return _res.status(200).json({message: "User Verified", status_code: "200", status: "success"});
 		} catch (error) {
@@ -216,25 +227,37 @@ const login = async (_req, _res) => {
 		let DB_access = "";
 		let is_user_available = "";
 		let is_password_match = "";
-		//----- Profile Check
-		if (!(_req.body.role !== "Company_User" || _req.body.role !== "Individual_User" || _req.body.role !== "Admin_User")) {
-			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User Role Not Found -- Service : Login`));
-			return _res.status(400).send({message: "User Profile Not Found", status_code: "400", status: "error"});
-		}
+		let user_id_field = "";
+		//----- Input Check
 		if (_req.body.email === "" || _req.body.password === "") {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Email or Password Not Found -- Service : Login`));
 			return _res.status(400).send({message: "Email or Password Not Found", status_code: "400", status: "error"});
 		}
-		//----- DB Access Type Check
-		if (_req.body.role === "Company_User") DB_access = Company_User;
-		if (_req.body.role === "Individual_User") DB_access = Individual_User;
-		if (_req.body.role === "Admin_User") DB_access = Admin_User;
-		//----- User Check
+		//----- User Exist Check
 		try {
-			is_user_available = await DB_access.findOne({email: _req.body.email});
+			is_user_available = await Common_User.findOne({email: _req.body.email});
 			if (!is_user_available) throw new Error("User Not Found");
 		} catch (error) {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 401 -- Error : ${error} : Email -- Service : Login`));
+			return _res.status(401).json({message: "Invalid Credentials", status_code: "401", status: "error"});
+		}
+
+		//----- DB Access Type Check
+		if (is_user_available.role === "Company_User") DB_access = Company_User;
+		if (is_user_available.role === "Individual_User") DB_access = Individual_User;
+		if (is_user_available.role === "Admin_User") DB_access = Admin_User;
+
+		//----- User Refresh Token Check Field Detection
+		if (is_user_available.role === "Company_User") user_id_field = "company_user_id";
+		if (is_user_available.role === "Individual_User") user_id_field = "individual_user_id";
+		if (is_user_available.role === "Admin_User") user_id_field = "admin_user_id";
+
+		//----- User Check
+		try {
+			is_user_available = await DB_access.findOne({email: _req.body.email});
+			if (!is_user_available) throw new Error("User Not Found In Related DB");
+		} catch (error) {
+			console.error(chalk.bold(`${getTimestamp()} Status Code : 401 -- Error : ${error} -- Service : Login`));
 			return _res.status(401).json({message: "Invalid Credentials", status_code: "401", status: "error"});
 		}
 		//----- User Status Check
@@ -243,6 +266,16 @@ const login = async (_req, _res) => {
 			return _res.status(401).json({message: "User is not active", status_code: "401", status: "error"});
 		}
 		//TODO : Bu aşamada kullanıcı doğrulama ekranına gidecek ve tekrar bir doğrulama kodu isteyecek ardından doğrulama kodu doğruysa login işlemi gerçekleşecek.
+		//----- DB Access Type Check
+		try {
+			const query = {};
+			query[user_id_field] = is_user_available._id;
+			const is_user_refresh_token_available = await Auth.findOne({...query});
+			if (is_user_refresh_token_available) throw new Error("User Already Logged In");
+		} catch (error) {
+			console.error(chalk.bold(`${getTimestamp()} Status Code : 401 -- Error : ${error} -- Service : Login`));
+			return _res.status(401).json({message: "User Already Logged In", status_code: "401", status: "error"});
+		}
 		//----- Password Check
 		try {
 			is_password_match = await bcrypt.compare(_req.body.password, is_user_available.password);
@@ -256,8 +289,11 @@ const login = async (_req, _res) => {
 		const refresh_token = jwt.sign({_id: is_user_available._id, role: _req.body.role}, process.env.REFRESH_TOKEN_SECRET, {expiresIn: "1d"});
 
 		//----- Token Save to DB & Cookie Set & Response
-		const current_user = {is_user_available, refresh_token};
 		try {
+			const query = {};
+			query[user_id_field] = is_user_available._id;
+			const current_user = {...query, refresh_token};
+
 			const auth_result = await Auth.create(current_user);
 			if (!auth_result) throw new Error("Auth DB Error");
 			_res.cookie("refresh_token", refresh_token, {
@@ -268,7 +304,7 @@ const login = async (_req, _res) => {
 				httpOnly: true, // "true" yerine "true" olarak ayarlanmalı
 			});
 			console.info(chalk.green.bold(`${getTimestamp()} Status Code : 200 -- Info : User Authenticated -- ID : ${is_user_available._id}`));
-			return _res.status(200).json({message: "User Authenticated", access_token, status_code: "200", status: "success"});
+			return _res.status(200).json({message: "User Authenticated", access_token, status_code: "200", status: "success", name: is_user_available.name, surname: is_user_available.surname});
 		} catch (error) {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : ${error} -- Service : Login`));
 			return _res.status(404).json({message: "Invalid Auth Data", status_code: "404", status: "error"});
