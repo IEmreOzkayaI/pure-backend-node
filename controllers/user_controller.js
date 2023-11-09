@@ -77,7 +77,7 @@ const register = async (_req, _res) => {
 
 			if (!verification_code) throw new Error("Verification Code Error");
 			//------------------
-			let confirm_url_token = jwt.sign({user_id: user_registered._id, role: _req.body.role}, process.env.CONFIRM_TOKEN_SECRET, {expiresIn: "5m"});
+			let confirm_url_token = jwt.sign({user_id: user_registered._id, role: _req.body.role}, process.env.CONFIRM_TOKEN_SECRET, {expiresIn: "30m"});
 			confirm_url_token = btoa(confirm_url_token);
 			send_email(_req.body.email, "Confirm account 🤕", "confirm_account", confirm_credential);
 			//------------------
@@ -129,16 +129,20 @@ const confirm = async (_req, _res) => {
 		if (confirm_user.role === "Individual_User") user_id_field = "individual_user_id";
 		if (confirm_user.role === "Admin_User") user_id_field = "admin_user_id";
 
+		//----- DB Access Type Check
+		if (confirm_user.role === "Company_User") DB_access = Company_User;
+		if (confirm_user.role === "Individual_User") DB_access = Individual_User;
+		if (confirm_user.role === "Admin_User") DB_access = Admin_User;		
+
 		try {
 			const query = {};
-			query[user_id_field] = confirm_user._id;
-
-			const validate_user = await Verification.findOne({...query, verification_code: _req.body});
+			query[user_id_field] = confirm_user.user_id;
+			const validate_user = await Verification.findOne({...query, verification_code: _req.body.confirm_credential});
 			if (!validate_user) throw new Error("Verification Code DB Search Error");
-			if (validate_user.verification_code !== _req.body) throw new Error("Verification Code Not Match");
+			if (validate_user.verification_code !== _req.body.confirm_credential) throw new Error("Verification Code Not Match");
 
 			await Verification.deleteOne({...query});
-			await DB_access.updateOne({_id: confirm_user.user_id}, {status: "ACTIVE"});
+			await DB_access.updateOne({_id: confirm_user.user_id }, {status: "ACTIVE"});
 
 			console.info(chalk.green.bold(`${getTimestamp()} Status Code : 200 -- Info : User Verified -- ID : ${confirm_user.user_id}`));
 			return _res.status(200).json({message: "User Verified", status_code: "200", status: "success"});
@@ -177,7 +181,6 @@ const re_confirm = async (_req, _res) => {
 				return _res.status(403).json({message: "Not authorized, no valid token", status_code: "403", status: "error"});
 			}
 			// If the token is valid, set the user in the request and proceed to the next middleware
-			console.log(decoded);
 			confirm_user = {user_id: decoded.user_id, role: decoded.role };
 		});
 
@@ -197,7 +200,6 @@ const re_confirm = async (_req, _res) => {
 			query[user_id_field] = confirm_user.user_id;
 			const validate_user = await Verification.findOne({...query});
 			if (!validate_user) throw new Error("Verification Code DB Search Error");
-			console.log(validate_user);
 			await Verification.deleteOne({...query});
 			const confirm_credential = crypto.randomInt(100000, 999999).toString();
 			const verification_code = await Verification.create({...query, verification_code: confirm_credential});
@@ -208,7 +210,7 @@ const re_confirm = async (_req, _res) => {
 
 			send_email(re_confirmed_user.email, "Confirm account 🤕", "confirm_account", confirm_credential);
 			//TODO: CAN CHANGE BECAUSE OF URL WE CAN GİVE AN REFRESH TOKEN ALSO FOR CONFIRM STEP AND THEN DELETE THEM. BUT NOW WE USE THIS
-			console.info(chalk.green.bold(`${getTimestamp()} Status Code : 200 -- Info : User Verified -- ID : ${confirm_user.user_id}`));
+			console.info(chalk.green.bold(`${getTimestamp()} Status Code : 200 -- Info : User Re Confirmed -- ID : ${confirm_user.user_id}`));
 			return _res.status(200).json({message: "Validate Token , resend please confirm", confirm_url_token, status_code: "200", status: "success"});
 		} catch (error) {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : ${error} -- Service : Re-Validate`));
