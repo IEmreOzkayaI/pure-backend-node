@@ -67,7 +67,8 @@ const register = async (_req, _res) => {
 			if (!user_registered) {
 				throw new Error("User Register Error");
 			}
-			await Common_User.create({email: _req.body.email, role: _req.body.role});
+			const userId = user_registered._id.toString();
+			await Common_User.create({email: _req.body.email, role: _req.body.role , user_id: userId});
 			//------------------
 			const query = {};
 			query[user_id_field] = user_registered._id;
@@ -76,7 +77,7 @@ const register = async (_req, _res) => {
 
 			if (!verification_code) throw new Error("Verification Code Error");
 			//------------------
-			let confirm_url_token = jwt.sign({_id: user_registered._id, role: _req.body.role}, process.env.CONFIRM_TOKEN_SECRET, {expiresIn: "5m"});
+			let confirm_url_token = jwt.sign({user_id: user_registered._id, role: _req.body.role}, process.env.CONFIRM_TOKEN_SECRET, {expiresIn: "5m"});
 			confirm_url_token = btoa(confirm_url_token);
 			send_email(_req.body.email, "Confirm account 🤕", "confirm_account", confirm_credential);
 			//------------------
@@ -116,7 +117,7 @@ const confirm = async (_req, _res) => {
 				return _res.status(403).json({message: "Not authorized, no valid token", status_code: "403", status: "error"});
 			}
 			// If the token is valid, set the user in the request and proceed to the next middleware
-			confirm_user = {_id: decoded._id, role: decoded.role};
+			confirm_user = {user_id: decoded.user_id, role: decoded.role};
 		});
 
 		if (!(confirm_user.role !== "Company_User" || confirm_user.role !== "Individual_User" || confirm_user.role !== "Admin_User")) {
@@ -128,11 +129,6 @@ const confirm = async (_req, _res) => {
 		if (confirm_user.role === "Individual_User") user_id_field = "individual_user_id";
 		if (confirm_user.role === "Admin_User") user_id_field = "admin_user_id";
 
-		//----- User Check
-		if (confirm_user.role === "Company_User") DB_access = Company_User;
-		if (confirm_user.role === "Individual_User") DB_access = Individual_User;
-		if (confirm_user.role === "Admin_User") DB_access = Admin_User;
-
 		try {
 			const query = {};
 			query[user_id_field] = confirm_user._id;
@@ -142,9 +138,9 @@ const confirm = async (_req, _res) => {
 			if (validate_user.verification_code !== _req.body) throw new Error("Verification Code Not Match");
 
 			await Verification.deleteOne({...query});
-			await DB_access.updateOne({_id: confirm_user._id}, {status: "ACTIVE"});
+			await DB_access.updateOne({_id: confirm_user.user_id}, {status: "ACTIVE"});
 
-			console.info(chalk.green.bold(`${getTimestamp()} Status Code : 200 -- Info : User Verified -- ID : ${confirm_user._id}`));
+			console.info(chalk.green.bold(`${getTimestamp()} Status Code : 200 -- Info : User Verified -- ID : ${confirm_user.user_id}`));
 			return _res.status(200).json({message: "User Verified", status_code: "200", status: "success"});
 		} catch (error) {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error  : ${error} -- Service : Confirm`));
@@ -157,22 +153,23 @@ const confirm = async (_req, _res) => {
 };
 
 // @desc   Re-Validate a new user
-// @route   POST /api/user/re-validate
+// @route   GET /api/user/re-confirm
 // @access  Public
-const re_validate = async (_req, _res) => {
+const re_confirm = async (_req, _res) => {
 	try {
 		let user_id_field = "";
 		let confirm_user = "";
 		let authHeader = _req.headers.Authorization || _req.headers.authorization;
 		let DB_access = "";
-
 		if (!authHeader || !authHeader.startsWith("Bearer")) {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : No confirm token -- Service : confirm_access_token`));
 			return _res.status(400).json({message: "Not confirm , No confirm token", status_code: "400", status: "error"});
 		}
 
 		// Extract the token from the header
-		const token = authHeader.split(" ")[1];
+		let token = authHeader.split(" ")[1];
+		token = atob(token);
+
 		// Verify the token
 		jwt.verify(token, process.env.CONFIRM_TOKEN_SECRET, (err, decoded) => {
 			if (err) {
@@ -180,9 +177,11 @@ const re_validate = async (_req, _res) => {
 				return _res.status(403).json({message: "Not authorized, no valid token", status_code: "403", status: "error"});
 			}
 			// If the token is valid, set the user in the request and proceed to the next middleware
-			confirm_user = {_id: decoded._id, role: decoded.role};
+			console.log(decoded);
+			confirm_user = {user_id: decoded.user_id, role: decoded.role };
 		});
-		if (!(_req.body.role !== "Company_User" || _req.body.role !== "Individual_User" || _req.body.role !== "Admin_User")) {
+
+		if (!(confirm_user.role !== "Company_User" || confirm_user.role !== "Individual_User" || confirm_user.role !== "Admin_User")) {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User Role Not Found -- Service : Re-Validate`));
 			return _res.status(400).send({message: "User Profile Not Found", status_code: "400", status: "error"});
 		}
@@ -190,13 +189,12 @@ const re_validate = async (_req, _res) => {
 		if (confirm_user.role === "Company_User") user_id_field = "company_user_id";
 		if (confirm_user.role === "Individual_User") user_id_field = "individual_user_id";
 		if (confirm_user.role === "Admin_User") user_id_field = "admin_user_id";
+
 		//----- User Check
-		if (confirm_user.role === "Company_User") DB_access = Company_User;
-		if (confirm_user.role === "Individual_User") DB_access = Individual_User;
-		if (confirm_user.role === "Admin_User") DB_access = Admin_User;
+		const re_confirmed_user = await Common_User.findOne({user_id: confirm_user.user_id});
 		try {
 			const query = {};
-			query[user_id_field] = confirm_user._id;
+			query[user_id_field] = confirm_user.user_id;
 			const validate_user = await Verification.findOne({...query});
 			if (!validate_user) throw new Error("Verification Code DB Search Error");
 			console.log(validate_user);
@@ -205,12 +203,12 @@ const re_validate = async (_req, _res) => {
 			const verification_code = await Verification.create({...query, verification_code: confirm_credential});
 			if (!verification_code) throw new Error("Verification Code Creation Error");
 			//------------------
-			let confirm_url_token = jwt.sign({_id: confirm_user._id, role: confirm_user.role}, process.env.CONFIRM_TOKEN_SECRET, {expiresIn: "1h"}); //TODO: Can change , WE CAN NOT GIVE A NEW TOKEN BECAUSE ALREADY HAS TIME
+			let confirm_url_token = jwt.sign({_id: confirm_user.user_id, role: confirm_user.role}, process.env.CONFIRM_TOKEN_SECRET, {expiresIn: "1h"}); //TODO: Can change , WE CAN NOT GIVE A NEW TOKEN BECAUSE ALREADY HAS TIME
 			confirm_url_token = btoa(confirm_url_token);
 
-			send_email("0emre.ozkaya0@gmail.com", "Confirm account 🤕", "confirm_account", confirm_credential);
+			send_email(re_confirmed_user.email, "Confirm account 🤕", "confirm_account", confirm_credential);
 			//TODO: CAN CHANGE BECAUSE OF URL WE CAN GİVE AN REFRESH TOKEN ALSO FOR CONFIRM STEP AND THEN DELETE THEM. BUT NOW WE USE THIS
-			console.info(chalk.green.bold(`${getTimestamp()} Status Code : 200 -- Info : User Verified -- ID : ${confirm_user._id}`));
+			console.info(chalk.green.bold(`${getTimestamp()} Status Code : 200 -- Info : User Verified -- ID : ${confirm_user.user_id}`));
 			return _res.status(200).json({message: "Validate Token , resend please confirm", confirm_url_token, status_code: "200", status: "success"});
 		} catch (error) {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : ${error} -- Service : Re-Validate`));
@@ -496,7 +494,7 @@ const user_controller = {
 	reset_password,
 	current,
 	confirm,
-	re_validate,
+	re_confirm,
 };
 export default user_controller;
 

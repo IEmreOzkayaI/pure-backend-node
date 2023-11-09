@@ -10,6 +10,11 @@ const common_user_schema = new mongoose.Schema({
 		type: String,
 		required: true,
 	},
+	user_id: {
+		type: String,
+		required: true,
+	},
+
 	created_at: {
 		type: Date,
 		default: Date.now,

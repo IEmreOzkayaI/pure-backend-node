@@ -20,7 +20,7 @@ user_router.route("/forgot-password").post(user_controller.forgot_password);
 user_router.route("/reset-password/:reset_token/:email").post(user_controller.reset_password);
 user_router.route("/current").get(validate_access_token_handler, user_controller.current);
 user_router.route("/confirm").post(user_controller.confirm);
-user_router.route("/re-confirm").get(user_controller.re_validate);
+user_router.route("/re-confirm").get(user_controller.re_confirm);
 
 
 export default user_router;
