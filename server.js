@@ -38,7 +38,7 @@ app.get("/api/user/forgot-password", (_req, _res) => {
 
 /** Router Connection */
 app.use("/api/user", user_router);
-app.use("/api/refresh", token_router);
+app.use("/api/access", token_router);
 app.use("/api/question", question_router);
 app.use("/api/challenge", challenge_router);
 app.use("/api/interview", interview_router);
@@ -50,7 +50,7 @@ app.use("/api/package", package_router);
 app.use("/api/technology", technology_router);
 
 app.use("*", (_req, _res) => {
-	_res.status(404).json({error: "Page not found mu cookie 🤕?"});
+	_res.status(404).json({error: "Page not found mu 🤕?"});
 });
 
 app.listen(process.env.PORT, () => {

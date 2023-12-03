@@ -4,15 +4,15 @@ import jwt from "jsonwebtoken";
 import chalk from "chalk";
 import getTimestamp from "../utils/time_stamp.js";
 import dotenv from "dotenv";
-dotenv.config()
+dotenv.config();
 
-// @route   GET /api/refresh/token
+// @route   GET /api/access/token
 // @access  Public
-const refresh_token = async (_req, _res) => {
+const access_token = async (_req, _res) => {
 	try {
 		const cookies = _req.cookies;
-		if (!cookies?.jwt) return _res.status(400).json({message: "Cookie is not available !"}); // No content
-		const refresh_token = cookies.jwt;
+		if (!cookies?.refresh_token) return _res.status(400).json({message: "Cookie is not available !"}); // No content
+		const refresh_token = cookies.refresh_token;
 		try {
 			const found_user = await Auth.findOne({refresh_token});
 			if (!found_user) {
@@ -39,4 +39,4 @@ const refresh_token = async (_req, _res) => {
 	}
 };
 
-export default {refresh_token};
+export default {access_token};
