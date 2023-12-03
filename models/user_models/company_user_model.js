@@ -25,10 +25,6 @@ const company_user_schema = new mongoose.Schema({
 		type: Boolean,
 		required: true,
 	},
-	address: {
-		type: String,
-		required: true,
-	},
 	industry: {
 		type: String,
 		required: true,
@@ -40,6 +36,10 @@ const company_user_schema = new mongoose.Schema({
 	web_site: {
 		type: String,
 		required: true,
+	},
+	address: {
+		type: String,
+		required: false,
 	},
 	package: {
 		package: {
@@ -53,21 +53,21 @@ const company_user_schema = new mongoose.Schema({
 		{
 			type: mongoose.Schema.Types.ObjectId,
 			ref: "Individual_User",
-            default: [],
+			default: [],
 		},
 	],
 	interview_list: [
 		{
 			type: mongoose.Schema.Types.ObjectId,
 			ref: "Interview",
-            default: [],
+			default: [],
 		},
 	],
-    notification_list: [
+	notification_list: [
 		{
 			type: mongoose.Schema.Types.ObjectId,
 			ref: "Notification",
-            default: [],
+			default: [],
 		},
 	],
 	linkedin_account: {
