@@ -10,7 +10,6 @@ import chalk from "chalk";
 import crypto from "crypto";
 import Verification from "../models/verification_model.js";
 import getTimestamp from "../utils/time_stamp.js";
-import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -72,18 +71,27 @@ const register = async (_req, _res) => {
             if (!user_registered) {
                 throw new Error("User Register Error");
             }
+            console.info(chalk.green.bold(`${getTimestamp()} Status Code : 201 -- Info : User Saved -- ID : ${user_registered._id}  -- User DB`));
             const userId = user_registered._id.toString();
-            await Common_User.create({email: _req.body.email, role: _req.body.role, user_id: userId});
+            // await Common_User.create({email: _req.body.email, role: _req.body.role, user_id: userId});
             //------------------
             const query = {};
             query[user_id_field] = user_registered._id;
             const secret_key = Pure_OTP.generateSecretKey();
+            await Common_User.create({
+                email: _req.body.email,
+                role: _req.body.role,
+                user_id: userId,
+                totp_secret_key: secret_key
+            });
+            console.info(chalk.green.bold(`${getTimestamp()} Status Code : 201 -- Info : User Secret Saved -- ID : ${user_registered._id} -- Auth DB`));
             const confirm_credential = Pure_OTP.generateOTP(secret_key);
             const verification_code = await Verification.create({
                 ...query,
                 verification_code: confirm_credential,
                 created_at: Date.now()
             });
+            console.info(chalk.green.bold(`${getTimestamp()} Status Code : 201 -- Info : User TOTP Saved -- ID : ${user_registered._id} -- OTP DB`));
             if (!verification_code) throw new Error("Verification Code Error");
             //------------------
             const confirm_token = jwt.sign({
@@ -118,7 +126,7 @@ const register = async (_req, _res) => {
 
 // @desc   Confirm a new user
 // @route   POST /api/user/confirm
-// @access  Public
+// @access  Public q
 const confirm = async (_req, _res) => {
     try {
         let DB_access = "";

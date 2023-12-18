@@ -14,7 +14,10 @@ const common_user_schema = new mongoose.Schema({
 		type: String,
 		required: true,
 	},
-
+	totp_secret_key:{
+		type: String,
+		required: true,
+	},
 	created_at: {
 		type: Date,
 		default: Date.now,

@@ -8,7 +8,7 @@ import question_controller from "../controllers/question_controllers/question_co
 
 const question_router = express.Router();
 
-question_router.use(validate_access_token_handler);
+// question_router.use(validate_access_token_handler);
 
 question_router.route("/add").post(question_controller.add);
 question_router.route("/update").put(question_controller.update);
@@ -23,6 +23,7 @@ question_router.route("/get_algorithm/:algorithm_id").get(algorithm_question_con
 question_router.route("/update_algorithm/:algorithm_id").put(algorithm_question_controller.update_algorithm);
 question_router.route("/delete_algorithm/:algorithm_id").delete(algorithm_question_controller.delete_algorithm);
 question_router.route("/get_algorithm/:level_id").get(algorithm_question_controller.get_algorithm_by_level);
+question_router.route("/run_algorithm").post(algorithm_question_controller.run_algorithm);
 
 /** Diagram Questions */
 question_router.route("/add_diagram").post(diagram_question_controller.add_diagram);

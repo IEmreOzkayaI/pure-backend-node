@@ -1,5 +1,81 @@
 import algorithm_question_model from "../../models/questionModels/algorithm_question_model.js";
 import algorithm_question_result_model from "../../models/questionModels/algorithm_question_result_model.js";
+import technologies from "../../middlewares/technologies.js";
+import {exec} from "child-process-promise";
+import {randomBytes} from "crypto";
+import fs from "fs";
+// @desc    Solve algorithm question
+// @route   POST /api/question/solve_algorithm
+// @access  Private
+const runAndClean = async (command, filePath, _res) => {
+    try {
+        console.log("command", command);
+        console.log("filePath", filePath);
+
+        const { stdout, stderr } = await execPromise(command);
+        await fs.unlink(filePath , (err) => {});
+        _res.send(stdout || stderr);
+    } catch (err) {
+        console.error('Hata:', err);
+        _res.status(500).send('Beklenmeyen bir hata oluştu');
+    }
+};
+
+const execPromise = (command) => {
+    return new Promise((resolve, reject) => {
+        exec(command, (err, stdout, stderr) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve({ stdout, stderr });
+            }
+        });
+    });
+};
+
+const run_algorithm = async (_req, _res) => {
+    try {
+        const { language, code } = _req.body;
+
+        const allowedLanguages = ['php', 'python', 'node', 'c', 'cpp'];
+        const random = Math.random().toString(36).substring(7);
+
+        if (!allowedLanguages.includes(language)) {
+            return _res.status(400).send('Desteklenmeyen dil');
+        }
+
+        let command = '';
+
+        switch (language) {
+            case 'php':
+                command = `php ${random}.php`;
+                break;
+            case 'python':
+                command = `python ${random}.py`;
+                break;
+            case 'node':
+                command = `node ${random}.js`;
+                break;
+            case 'c':
+                command = `gcc ${random}.c -o ${random}.exe && ./${random}.exe`;
+                break;
+            case 'cpp':
+                command = `g++ ${random}.cpp -o ${random}.exe && ./${random}.exe`;
+                break;
+            default:
+                return _res.status(400).send('Desteklenmeyen dil');
+        }
+
+        const filePath = `./${command.split(' ')[1]}`;
+
+        await fs.writeFile(filePath, code,(err)=>{});
+
+        await runAndClean(command, filePath, _res);
+    } catch (error) {
+        console.error('Hata:', error);
+        _res.status(500).send('Beklenmeyen bir hata oluştu');
+    }
+};
 
 // @desc    Add new algorithm question
 // @route   POST /api/question/add_algorithm
@@ -32,17 +108,16 @@ const update_algorithm = async (_req, _res) => {
 // @desc    Delete algorithm question
 // @route   DELETE /api/question/delete_algorithm/:algorithm_id
 // @access  Private
-const delete_algorithm =async (_req, _res) => {
+const delete_algorithm = async (_req, _res) => {
     return _res.send("Delete Algorithm")
 };
 
 // @desc    Get algorithm question by level
 // @route   GET /api/question/get_algorithm/:level_id
 // @access  Private
-const get_algorithm_by_level =async (_req, _res) => {
+const get_algorithm_by_level = async (_req, _res) => {
     return _res.send("Get Algorithm By Level")
 };
-
 
 const algorithm_question_controller = {
     add_algorithm,
@@ -50,6 +125,7 @@ const algorithm_question_controller = {
     get_algorithm_by_id,
     update_algorithm,
     delete_algorithm,
-    get_algorithm_by_level
+    get_algorithm_by_level,
+    run_algorithm
 }
 export default algorithm_question_controller;
