@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
+import {v4 as uuid} from "uuid";
 
 const individual_user_schema = new mongoose.Schema({
+	_id: { type: String, default: function genUUID() {
+			return uuid()
+		}},
 	name: {
 		type: String,
 		required: true,
@@ -43,28 +47,21 @@ const individual_user_schema = new mongoose.Schema({
 	},
 	notification_list: [
 		{
-			type: mongoose.Schema.Types.ObjectId,
+			type: mongoose.Schema.Types.UUID,
 			ref: "Notification",
 			default: [],
 		},
 	],
 	challenge_list: [
 		{
-			type: mongoose.Schema.Types.ObjectId,
+			type: mongoose.Schema.Types.UUID,
 			ref: "Challenge",
-			default: [],
-		},
-	],
-	technology_list: [
-		{
-			type: mongoose.Schema.Types.ObjectId,
-			ref: "Technology",
 			default: [],
 		},
 	],
 	certificate_list: [
 		{
-			type: mongoose.Schema.Types.ObjectId,
+			type: mongoose.Schema.Types.UUID,
 			ref: "Certificate",
 			default: [],
 		},
@@ -72,19 +69,11 @@ const individual_user_schema = new mongoose.Schema({
 	entered_interview_list: [
 		// only registered user can see this
 		{
-			type: mongoose.Schema.Types.ObjectId,
+			type: mongoose.Schema.Types.UUID,
 			ref: "Interview",
 			default: [],
 		},
 	],
-	package: {
-		package: {
-			type: mongoose.Schema.Types.ObjectId,
-			ref: "Package",
-		},
-		package_start_date: Date,
-		package_end_date: Date,
-	},
 	github_account: {
 		type: String,
 		required: false,

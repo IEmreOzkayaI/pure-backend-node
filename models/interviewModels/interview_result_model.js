@@ -1,13 +1,19 @@
 import mongoose from "mongoose";
+import {v4 as uuid} from "uuid";
 
 const interview_result_schema = new mongoose.Schema({
+    _id: {
+        type: String, default: function genUUID() {
+            return uuid()
+        }
+    },
     interview_id: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.UUID,
         ref: "Interview"
     },
 
     user_id: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.UUID,
         ref: "User"
     },
 

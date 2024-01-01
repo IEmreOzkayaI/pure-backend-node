@@ -1,6 +1,12 @@
 import mongoose from "mongoose";
+import {v4 as uuid} from "uuid";
 
 const package_schema = new mongoose.Schema({
+    _id: {
+        type: String, default: function genUUID() {
+            return uuid()
+        }
+    },
     name: {
         type: String,
         required: true

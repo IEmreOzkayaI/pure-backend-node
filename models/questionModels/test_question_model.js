@@ -1,16 +1,18 @@
 import mongoose from "mongoose";
+import {v4 as uuid} from "uuid";
 
 const test_question_schema = new mongoose.Schema({
+    _id: {
+        type: String, default: function genUUID() {
+            return uuid()
+        }
+    },
     topic: {
         type: String
     },
     level_id: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.UUID,
         ref: "Level"
-    },
-    job_type_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Job_Type"
     },
     // algorithm , description . text , real life scenario
     context: {

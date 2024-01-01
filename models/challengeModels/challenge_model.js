@@ -1,6 +1,12 @@
 import mongoose from "mongoose";
+import {v4 as uuid} from "uuid";
 
 const challenge_schema = new mongoose.Schema({
+    _id: {
+        type: String, default: function genUUID() {
+            return uuid()
+        }
+    },
     name: {
         type: String,
         required: true
@@ -14,19 +20,15 @@ const challenge_schema = new mongoose.Schema({
         required: true
     },
     diagram_question_list: [{
-        type: mongoose.Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.UUID,
         ref: "Diagram_Question",
     }, ],
     test_question_list: [{
-        type: mongoose.Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.UUID,
         ref: "Test_Question",
     }, ],
-    documentation_question_list: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Documentation_Question",
-    }, ],
     algorithm_question_list: [{
-        type: mongoose.Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.UUID,
         ref: "Algorithm_Question",
     }, ],
     created_at: {

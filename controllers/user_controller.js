@@ -7,10 +7,10 @@ import Auth from "../models/auth_model.js";
 import jwt from "jsonwebtoken";
 import send_email from "../utils/send_email.js";
 import chalk from "chalk";
-import crypto from "crypto";
 import Verification from "../models/verification_model.js";
 import getTimestamp from "../utils/time_stamp.js";
 import dotenv from "dotenv";
+import bcrypt from "bcrypt";
 
 dotenv.config();
 
@@ -419,24 +419,21 @@ const login = async (_req, _res) => {
 // @access  Private
 const logout = async (_req, _res) => {
     try {
-        const cookies = _req.cookies;
-        if (!cookies?.jwt) {
-            console.error(chalk.bold(`${getTimestamp()} Status Code : 204 -- Error : Cookie is not available ! -- Service : Logout`));
-            return _res.status(204).json({message: "Cookie is not available !", status_code: "204", status: "error"}); //No content
-        }
-        const refresh_token = cookies.jwt;
+        console.log("user log catched")
+        const refresh_token = _req.cookies.refresh_token;
         const found_user = await Auth.findOne({refresh_token});
 
         if (!found_user) {
             _res.clearCookie("jwt", {httpOnly: true});
             console.error(chalk.bold(`${getTimestamp()} Status Code : 204 -- Error : User is not available ! -- Service : Logout`));
-            return _res.status(204).json({message: "User is not available !", status_code: "204", status: "error"});
+            return _res.status(400).json({message: "User is not available !", status_code: "400", status: "error"});
         }
 
         await Auth.deleteOne({refresh_token});
-        _res.clearCookie("jwt", {httpOnly: true});
+        _res.clearCookie("refresh_token", {httpOnly: true});
+        _res.clearCookie("access_token", {httpOnly: true});
         console.info(chalk.green.bold(`${getTimestamp()} Status Code : 204 -- Info : User Logged Out -- ID : ${found_user._id}`));
-        return _res.status(204).json({message: "User is logged out !", status_code: "204", status: "success"});
+        return _res.status(200).json({message: "User is logged out !", status_code: "200", status: "success" , redirect:"/"});
     } catch (error) {
         console.error(chalk.bold(`${getTimestamp()} Status Code : 503 -- Error : ${error} -- Service : Logout`));
         return _res.status(503).json({message: "Server Error", status_code: "503", status: "error"});
@@ -582,6 +579,7 @@ const current = async (_req, _res) => {
             if (!is_user_available) throw new Error("User Not Found");
             const user_dto = {
                 _id: is_user_available._id,
+                role: _req.user.role,
                 name: is_user_available.name,
                 surname: is_user_available.surname,
                 email: is_user_available.email,

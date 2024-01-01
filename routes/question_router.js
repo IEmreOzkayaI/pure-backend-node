@@ -3,7 +3,6 @@ import validate_access_token_handler from "../middlewares/validate_access_token_
 import algorithm_question_controller from "../controllers/question_controllers/algorithm_question_controller.js";
 import diagram_question_controller from "../controllers/question_controllers/diagram_question_controller.js";
 import test_question_controller from "../controllers/question_controllers/test_question_controller.js";
-import documentation_question_controller from "../controllers/question_controllers/documentation_question_controller.js";
 import question_controller from "../controllers/question_controllers/question_controller.js";
 
 const question_router = express.Router();
@@ -40,13 +39,5 @@ question_router.route("/get_test/:test_id").get(test_question_controller.get_tes
 question_router.route("/update_test/:test_id").put(test_question_controller.update_test);
 question_router.route("/delete_test/:test_id").delete(test_question_controller.delete_test);
 question_router.route("/get_test/:level_id").get(test_question_controller.get_test_by_level);
-
-/** Test Questions */
-question_router.route("/add_documentation").post(documentation_question_controller.add_documentation);
-question_router.route("/get_all_documentation").get(documentation_question_controller.get_all_documentation);
-question_router.route("/get_documentation/:documentation_id").get(documentation_question_controller.get_documentation_by_id);
-question_router.route("/update_documentation/:documentation_id").put(documentation_question_controller.update_documentation);
-question_router.route("/delete_documentation/:documentation_id").delete(documentation_question_controller.delete_documentation);
-question_router.route("/get_documentation/:level_id").get(documentation_question_controller.get_documentation_by_level);
 
 export default question_router;
