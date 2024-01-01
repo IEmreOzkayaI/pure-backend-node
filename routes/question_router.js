@@ -18,7 +18,8 @@ question_router.route("/get/:question_id").get(question_controller.get_by_questi
 /** Algorithm Questions */
 question_router.route("/add_algorithm").post(algorithm_question_controller.add_algorithm);
 question_router.route("/get_all_algorithm").get(algorithm_question_controller.get_all_algorithm);
-question_router.route("/get_algorithm/:algorithm_id").get(algorithm_question_controller.get_algorithm_by_id);
+question_router.route("/get_algorithm_question_part_by_id/:algorithm_id").get(algorithm_question_controller.get_algorithm_question_part_by_id);
+question_router.route("/get_algorithm_answer_part_by_id/:algorithm_id").get(algorithm_question_controller.get_algorithm_answer_part_by_id);
 question_router.route("/update_algorithm/:algorithm_id").put(algorithm_question_controller.update_algorithm);
 question_router.route("/delete_algorithm/:algorithm_id").delete(algorithm_question_controller.delete_algorithm);
 question_router.route("/get_algorithm/:level_id").get(algorithm_question_controller.get_algorithm_by_level);

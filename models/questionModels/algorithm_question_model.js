@@ -15,7 +15,7 @@ const algorithm_question_schema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    level_id: {
+    level: {
         type: mongoose.Schema.Types.UUID,
         ref: "Level",
     },
