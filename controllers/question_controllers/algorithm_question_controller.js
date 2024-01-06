@@ -16,7 +16,13 @@ const runAndClean = async (command, filePath, _res) => {
         const {stdout, stderr} = await execPromise(command);
         await fs.unlink(filePath, (err) => {
         });
-        _res.send(stdout || stderr);
+        // _res.send(stdout || stderr);
+        _res.status(200).json({
+            message: "Algorithm Question Created",
+            status_code: "200",
+            status: "success",
+            data: stdout || stderr
+        });
     } catch (err) {
         console.error('Hata:', err);
         _res.status(500).send('Beklenmeyen bir hata oluştu');
@@ -37,9 +43,13 @@ const execPromise = (command) => {
 
 const run_algorithm = async (_req, _res) => {
     try {
-        const {language, code} = _req.body;
+        let {language, code , _id} = _req.body;
+        language = language.split('/')[2].toLowerCase();
+        console.log("language",  language);
+        console.log("code", code);
+        console.log("_id", _id);
 
-        const allowedLanguages = ['php', 'python', 'node', 'c', 'cpp'];
+        const allowedLanguages = ['php', 'python', 'javascript', 'c', 'cpp'];
         const random = Math.random().toString(36).substring(7);
 
         if (!allowedLanguages.includes(language)) {
@@ -55,7 +65,7 @@ const run_algorithm = async (_req, _res) => {
             case 'python':
                 command = `python ${random}.py`;
                 break;
-            case 'node':
+            case 'javascript':
                 command = `node ${random}.js`;
                 break;
             case 'c':
@@ -111,6 +121,7 @@ const add_algorithm = async (_req, _res) => {
         additional_resources_about_algorithm_and_topic: _req.body.additional_resources_about_algorithm_and_topic,
         interactive_steps: _req.body.interactive_steps
     });
+
     if (!algorithm_added) {
         console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Algorithm Question Couldn't Create -- Service : Algorithm Add`));
         return _res.status(400).send("Algorithm couldn't be added");
@@ -132,7 +143,7 @@ const get_all_algorithm = async (_req, _res) => {
         if (!questions) {
             console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Questions Not Found -- Service : Algorithm Get All`));
             return _res.status(404).json({message: 'Questions not found'});
-        }else{
+        } else {
             for (let i = 0; i < questions.length; i++) {
                 const level = await Level_model.findById(questions[i].level);
                 if (level) {
@@ -229,8 +240,22 @@ const update_algorithm = async (_req, _res) => {
         if (question) {
             // Update the question
             Object.assign(question, _req.body);
-            const updatedQuestion = await question.save();
-            return _res.json(updatedQuestion);
+            const updatedQuestion = await question.findByIdAndUpdate(_req.params.algorithm_id, question, {
+                new: true,
+                runValidators: true
+            });
+            if (updatedQuestion) {
+                console.log(chalk.bold(`${getTimestamp()} Status Code : 200 -- Message : Algorithm Updated -- Service : Algorithm Update`));
+                return _res.status(200).json({
+                    message: "Algorithm Updated",
+                    status_code: "200",
+                    status: "success",
+                    data: updatedQuestion
+                });
+            } else {
+                console.error(chalk.bold(`${getTimestamp()} Status Code : 500 -- Error : Algorithm is not updated -- Service : Algorithm Update`));
+                return _res.status(500).json({message: 'Algorithm is not updated'});
+            }
         } else {
             console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Question Not Found -- Service : Algorithm Update`));
             return _res.status(404).json({message: 'Question not found'});
@@ -246,9 +271,9 @@ const update_algorithm = async (_req, _res) => {
 // @access  Private
 const delete_algorithm = async (_req, _res) => {
     try {
-        const question = await algorithm_question_model.findById(_req.params.question_id);
+        const question = await algorithm_question_model.findById(_req.params.algorithm_id);
         if (question) {
-            await question.remove();
+            await algorithm_question_model.findByIdAndDelete(_req.params.algorithm_id);
             return _res.json({message: 'Question removed'});
         } else {
             console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Question Not Found -- Service : Algorithm Delete`));

@@ -1,24 +1,25 @@
 import mongoose from "mongoose";
 import {v4 as uuid} from "uuid";
 
-const documentation_question_schema = new mongoose.Schema({
+const diagram_question_model = new mongoose.Schema({
     _id: {
         type: String, default: function genUUID() {
             return uuid()
         }
     },
-    topic: {
+    topic: { // diagram type , sequence , use case , class , activity ın mı dökümanını istiyecek
         type: String,
     },
-    level_id: {
+    name: { // soru adı
+        type: String,
+        required: true,
+    },
+    level: {
         type: mongoose.Schema.Types.UUID,
         ref: "Level",
     },
-    context: {
-        type: String, // diagram type , sequence , use case , class , activity ın mı dökümanını istiyecek
-    },
-    content: {
-        type: String, // diagram image
+    description: { // soru içeriği
+        type: String,
         required: true,
     },
     answer: {
@@ -44,4 +45,8 @@ const documentation_question_schema = new mongoose.Schema({
     },
 });
 
-export default mongoose.model("Diagram_Question", documentation_question_schema);
+export default mongoose.model("Diagram_Question", diagram_question_model);
+
+// steps
+// actors
+// functions bunlarıda ayrı ayrı alabiliriz.

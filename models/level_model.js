@@ -23,4 +23,4 @@ const level_schema = new mongoose.Schema({
     },
 });
 
-export default mongoose.model("Level", level_schema);
+export default mongoose.model("Level", level_schema , "levels");

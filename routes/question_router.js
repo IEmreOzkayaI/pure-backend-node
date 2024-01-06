@@ -28,7 +28,8 @@ question_router.route("/run_algorithm").post(algorithm_question_controller.run_a
 /** Diagram Questions */
 question_router.route("/add_diagram").post(diagram_question_controller.add_diagram);
 question_router.route("/get_all_diagram").get(diagram_question_controller.get_all_diagram);
-question_router.route("/get_diagram/:diagram_id").get(diagram_question_controller.get_diagram_by_id);
+question_router.route("/get_diagram_question_part_by_id/:diagram_id").get(diagram_question_controller.get_diagram_question_part_by_id);
+question_router.route("/get_diagram_answer_part_by_id/:diagram_id").get(diagram_question_controller.get_diagram_answer_part_by_id);
 question_router.route("/update_diagram/:diagram_id").put(diagram_question_controller.update_diagram);
 question_router.route("/delete_diagram/:diagram_id").delete(diagram_question_controller.delete_diagram);
 question_router.route("/get_diagram/:level_id").get(diagram_question_controller.get_diagram_by_level);

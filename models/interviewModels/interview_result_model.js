@@ -41,7 +41,16 @@ const interview_result_schema = new mongoose.Schema({
         type: Number,
         required: true
     },
-
+    privacy_policy: {
+        type: Boolean,
+        required: true,
+        default: false
+    },
+    terms_of_use: {
+        type: Boolean,
+        required: true,
+        default: false
+    },
     created_at: {
         type: Date,
         default: Date.now

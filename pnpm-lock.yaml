@@ -68,6 +68,9 @@ dependencies:
   uuid:
     specifier: ^9.0.1
     version: 9.0.1
+  uuid-buffer:
+    specifier: ^1.0.3
+    version: 1.0.3
 
 packages:
 
@@ -1665,6 +1668,11 @@ packages:
   /utils-merge@1.0.1:
     resolution: {integrity: sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==}
     engines: {node: '>= 0.4.0'}
+    dev: false
+
+  /uuid-buffer@1.0.3:
+    resolution: {integrity: sha512-UGuYz0MDQRNf/n8PrO2OXGyl4PDUP4zURZFB+GwJuYL2cDAo39rfaI2R1MI8skh3rns/znegRu8ik/TDlzwp+w==}
+    engines: {node: '>6.0.0'}
     dev: false
 
   /uuid@9.0.1:
