@@ -1,6 +1,12 @@
 import mongoose from "mongoose";
+import {v4 as uuid} from "uuid";
 
 const company_user_schema = new mongoose.Schema({
+	_id: {
+		type: String, default: function genUUID() {
+			return uuid()
+		}
+	},
 	name: {
 		type: String,
 		required: true,
@@ -43,7 +49,7 @@ const company_user_schema = new mongoose.Schema({
 	},
 	package: {
 		package: {
-			type: mongoose.Schema.Types.ObjectId,
+			type: mongoose.Schema.Types.UUID,
 			ref: "Package",
 		},
 		package_start_date: Date,
@@ -51,21 +57,21 @@ const company_user_schema = new mongoose.Schema({
 	},
 	company_user_list: [
 		{
-			type: mongoose.Schema.Types.ObjectId,
+			type: mongoose.Schema.Types.UUID,
 			ref: "Individual_User",
 			default: [],
 		},
 	],
 	interview_list: [
 		{
-			type: mongoose.Schema.Types.ObjectId,
+			type: mongoose.Schema.Types.UUID,
 			ref: "Interview",
 			default: [],
 		},
 	],
 	notification_list: [
 		{
-			type: mongoose.Schema.Types.ObjectId,
+			type: mongoose.Schema.Types.UUID,
 			ref: "Notification",
 			default: [],
 		},

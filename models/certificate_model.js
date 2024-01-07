@@ -1,6 +1,12 @@
 import mongoose from "mongoose";
+import {v4 as uuid} from "uuid";
 
 const certificate_schema = new mongoose.Schema({
+    _id: {
+        type: String, default: function genUUID() {
+            return uuid()
+        }
+    },
     name: {
         type: String,
         required: true
@@ -10,11 +16,11 @@ const certificate_schema = new mongoose.Schema({
         required: true
     },
     challenge_id_list: [{
-        type: mongoose.Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.UUID,
         ref: "Challenge"
     }],
     user_id_list: [{
-        type: mongoose.Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.UUID,
         ref: "User"
     }],
     created_at: {

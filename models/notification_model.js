@@ -1,8 +1,14 @@
 import mongoose from "mongoose";
+import {v4 as uuid} from "uuid";
 
 const notification_schema = new mongoose.Schema({
+    _id: {
+        type: String, default: function genUUID() {
+            return uuid()
+        }
+    },
     user_id: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.UUID,
         ref: "User"
     },
     notification_type: {

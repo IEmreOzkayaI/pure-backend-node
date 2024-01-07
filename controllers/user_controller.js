@@ -7,11 +7,10 @@ import Auth from "../models/auth_model.js";
 import jwt from "jsonwebtoken";
 import send_email from "../utils/send_email.js";
 import chalk from "chalk";
-import crypto from "crypto";
 import Verification from "../models/verification_model.js";
 import getTimestamp from "../utils/time_stamp.js";
-import bcrypt from "bcrypt";
 import dotenv from "dotenv";
+import bcrypt from "bcrypt";
 
 dotenv.config();
 
@@ -72,18 +71,27 @@ const register = async (_req, _res) => {
             if (!user_registered) {
                 throw new Error("User Register Error");
             }
+            console.info(chalk.green.bold(`${getTimestamp()} Status Code : 201 -- Info : User Saved -- ID : ${user_registered._id}  -- User DB`));
             const userId = user_registered._id.toString();
-            await Common_User.create({email: _req.body.email, role: _req.body.role, user_id: userId});
+            // await Common_User.create({email: _req.body.email, role: _req.body.role, user_id: userId});
             //------------------
             const query = {};
             query[user_id_field] = user_registered._id;
             const secret_key = Pure_OTP.generateSecretKey();
+            await Common_User.create({
+                email: _req.body.email,
+                role: _req.body.role,
+                user_id: userId,
+                totp_secret_key: secret_key
+            });
+            console.info(chalk.green.bold(`${getTimestamp()} Status Code : 201 -- Info : User Secret Saved -- ID : ${user_registered._id} -- Auth DB`));
             const confirm_credential = Pure_OTP.generateOTP(secret_key);
             const verification_code = await Verification.create({
                 ...query,
                 verification_code: confirm_credential,
                 created_at: Date.now()
             });
+            console.info(chalk.green.bold(`${getTimestamp()} Status Code : 201 -- Info : User TOTP Saved -- ID : ${user_registered._id} -- OTP DB`));
             if (!verification_code) throw new Error("Verification Code Error");
             //------------------
             const confirm_token = jwt.sign({
@@ -118,7 +126,7 @@ const register = async (_req, _res) => {
 
 // @desc   Confirm a new user
 // @route   POST /api/user/confirm
-// @access  Public
+// @access  Public q
 const confirm = async (_req, _res) => {
     try {
         let DB_access = "";
@@ -411,24 +419,21 @@ const login = async (_req, _res) => {
 // @access  Private
 const logout = async (_req, _res) => {
     try {
-        const cookies = _req.cookies;
-        if (!cookies?.jwt) {
-            console.error(chalk.bold(`${getTimestamp()} Status Code : 204 -- Error : Cookie is not available ! -- Service : Logout`));
-            return _res.status(204).json({message: "Cookie is not available !", status_code: "204", status: "error"}); //No content
-        }
-        const refresh_token = cookies.jwt;
+        console.log("user log catched")
+        const refresh_token = _req.cookies.refresh_token;
         const found_user = await Auth.findOne({refresh_token});
 
         if (!found_user) {
             _res.clearCookie("jwt", {httpOnly: true});
             console.error(chalk.bold(`${getTimestamp()} Status Code : 204 -- Error : User is not available ! -- Service : Logout`));
-            return _res.status(204).json({message: "User is not available !", status_code: "204", status: "error"});
+            return _res.status(400).json({message: "User is not available !", status_code: "400", status: "error"});
         }
 
         await Auth.deleteOne({refresh_token});
-        _res.clearCookie("jwt", {httpOnly: true});
+        _res.clearCookie("refresh_token", {httpOnly: true});
+        _res.clearCookie("access_token", {httpOnly: true});
         console.info(chalk.green.bold(`${getTimestamp()} Status Code : 204 -- Info : User Logged Out -- ID : ${found_user._id}`));
-        return _res.status(204).json({message: "User is logged out !", status_code: "204", status: "success"});
+        return _res.status(200).json({message: "User is logged out !", status_code: "200", status: "success" , redirect:"/"});
     } catch (error) {
         console.error(chalk.bold(`${getTimestamp()} Status Code : 503 -- Error : ${error} -- Service : Logout`));
         return _res.status(503).json({message: "Server Error", status_code: "503", status: "error"});
@@ -574,6 +579,7 @@ const current = async (_req, _res) => {
             if (!is_user_available) throw new Error("User Not Found");
             const user_dto = {
                 _id: is_user_available._id,
+                role: _req.user.role,
                 name: is_user_available.name,
                 surname: is_user_available.surname,
                 email: is_user_available.email,

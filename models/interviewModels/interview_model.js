@@ -1,6 +1,12 @@
 import mongoose from 'mongoose';
+import {v4 as uuid} from "uuid";
 
 const interview_schema = new mongoose.Schema({
+    _id: {
+        type: String, default: function genUUID() {
+            return uuid()
+        }
+    },
     name: {
         type: String,
         required: true
@@ -9,28 +15,26 @@ const interview_schema = new mongoose.Schema({
         type: String,
         required: true
     },
-    diagram_question_list: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Diagram_Question",
-    }, ],
-    test_question_list: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Test_Question",
-    }, ],
-    documentation_question_list: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Documentation_Question",
-    }, ],
-    algorithm_question_list: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Algorithm_Question",
-    }, ],
+    questions:{
+        diagram_question_list: [{
+            type: mongoose.Schema.Types.UUID,
+            ref: "Diagram_Question",
+        }, ],
+        test_question_list: [{
+            type: mongoose.Schema.Types.UUID,
+            ref: "Test_Question",
+        }, ],
+        algorithm_question_list: [{
+            type: mongoose.Schema.Types.UUID,
+            ref: "Algorithm_Question",
+        }, ],
+    },
     company_list: [{
-        type: mongoose.Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.UUID,
         ref: "Company_User",
     }, ],
     interview_time: {
-        type: Number,
+        type: String,
         required: true
     },
     created_at: {
@@ -44,16 +48,6 @@ const interview_schema = new mongoose.Schema({
     closed_at: {
         type: Date,
         default: Date.now
-    },
-    privacy_policy: {
-        type: Boolean,
-        required: true,
-        default: false
-    },
-    terms_of_use: {
-        type: Boolean,
-        required: true,
-        default: false
     },
     status: {
         type: String,
