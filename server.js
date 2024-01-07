@@ -25,7 +25,7 @@ dotenv.config();
 
 /** Request Handler Middlewares */
 app.time
-app.use(credentials);
+// app.use(credentials);
 // app.use(cors(cors_options));
 app.use(cors());
 app.use(express.urlencoded({extended: false}));
