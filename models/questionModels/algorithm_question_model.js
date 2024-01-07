@@ -55,6 +55,24 @@ const algorithm_question_schema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    parameter_list:{
+        javascript: {
+            type: [String],
+            required: true,
+        },
+        python: {
+            type: [String],
+            required: true,
+        },
+        java: {
+            type: [String],
+            required: true,
+        },
+        csharp: {
+            type: [String],
+            required: true,
+        },
+    },
     missing_part: {
         javascript: {
             type: String,
@@ -68,7 +86,7 @@ const algorithm_question_schema = new mongoose.Schema({
             type: String,
             required: true,
         },
-        cSharp: {
+        csharp: {
             type: String,
             required: true,
         },
@@ -86,7 +104,7 @@ const algorithm_question_schema = new mongoose.Schema({
             type: String,
             required: true,
         },
-        cSharp: {
+        csharp: {
             type: String,
             required: true,
         },

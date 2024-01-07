@@ -15,10 +15,6 @@ const interview_schema = new mongoose.Schema({
         type: String,
         required: true
     },
-    question_amount: {
-        type: Number,
-        required: true
-    },
     questions:{
         diagram_question_list: [{
             type: mongoose.Schema.Types.UUID,

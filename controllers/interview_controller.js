@@ -135,10 +135,7 @@ const update_interview = async (_req, _res) => {
         if (interview) {
             // Update the question
             Object.assign(interview, _req.body);
-            const updatedInterview = await interview.findByIdAndUpdate(_req.params.interview_id, interview, {
-                new: true,
-                runValidators: true
-            });
+            const updatedInterview = await interview_model.findByIdAndUpdate(_req.params.interview_id, interview, );
             if (updatedInterview) {
                 console.log(chalk.bold(`${getTimestamp()} Status Code : 200 -- Message : Interview Updated -- Service : Interview Update`));
                 return _res.status(200).json({
@@ -152,11 +149,11 @@ const update_interview = async (_req, _res) => {
                 return _res.status(500).json({message: 'Interview is not updated'});
             }
         } else {
-            console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Question Not Found -- Service : Diagram Update`));
+            console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Question Not Found -- Service : Interview Update`));
             return _res.status(404).json({message: 'Question not found'});
         }
     } catch (error) {
-        console.error(chalk.bold(`${getTimestamp()} Status Code : 500 -- Error : ${error} -- Service : Diagram Update`));
+        console.error(chalk.bold(`${getTimestamp()} Status Code : 500 -- Error : ${error} -- Service : Interview Update`));
         return _res.status(500).json({message: 'Server Error'});
     }
 };

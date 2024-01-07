@@ -8,21 +8,27 @@ import Level_model from "../../models/level_model.js";
 // @desc    Solve algorithm question
 // @route   POST /api/question/solve_algorithm
 // @access  Private
-const runAndClean = async (command, filePath, _res) => {
+const runAndClean = async (command, filePath, _res , input , output) => {
     try {
         console.log("command", command);
         console.log("filePath", filePath);
 
         const {stdout, stderr} = await execPromise(command);
-        await fs.unlink(filePath, (err) => {
-        });
+        // await fs.unlink(filePath, (err) => {
+        // });
         // _res.send(stdout || stderr);
+        console.log(stdout)
         _res.status(200).json({
             message: "Algorithm Question Created",
             status_code: "200",
             status: "success",
-            data: stdout || stderr
+            data: {
+                input: input,
+                output: output,
+                result: stdout
+            }
         });
+
     } catch (err) {
         console.error('Hata:', err);
         _res.status(500).send('Beklenmeyen bir hata oluştu');
@@ -37,42 +43,92 @@ const execPromise = (command) => {
             } else {
                 resolve({stdout, stderr});
             }
+        }).then(r => {
+            console.log(r);
+        }).catch(e => {
+            console.log(e);
         });
     });
 };
 
 const run_algorithm = async (_req, _res) => {
     try {
-        let {language, code , _id} = _req.body;
+        let {language, code, _id} = _req.body;
         language = language.split('/')[2].toLowerCase();
-        console.log("language",  language);
-        console.log("code", code);
-        console.log("_id", _id);
+        let input = '';
+        language = language === 'csp' ? 'csharp' : language;
+        // language detection
+        const allowedLanguages = ['python', 'javascript', 'csharp', 'java'];
+        const print_types = {
+            'java': 'System.out.println',
+            'csharp': 'Console.WriteLine',
+            'python': 'print',
+            'javascript': 'console.log',
+        }
+        if (!allowedLanguages.includes(language)) {
+            _res.status(400).json({
+                message: "Unsupported language",
+                status_code: "400",
+                status: "error",
+                data: language
+            });
+        }
 
-        const allowedLanguages = ['php', 'python', 'javascript', 'c', 'cpp'];
+        //take question from db
+        const algorithm_question = await Algorithm_question_model.findById(_id);
+        if (!algorithm_question) {
+            _res.status(400).json({
+                message: "Question not found",
+                status_code: "400",
+                status: "error",
+                data: _id
+            });
+        }
+
+        const function_parameters = algorithm_question.parameter_list[language];
+        const print_type = print_types[language];
+        const first_test_input = algorithm_question.test_cases[0].input;
+        const first_test_output = algorithm_question.test_cases[0].output;
+
+        // JavaScript kodunu analiz ederek fonksiyon adını alabiliriz
+        const regex = /([a-zA-Z]+)\(/;
+        const functionName = code.match(regex);
+        if (functionName && functionName[1]) {
+            console.log("Function name: " + functionName[1]);
+        } else {
+            console.error(chalk.bold(`${getTimestamp()} Status Code : 500 -- Error : Function name not found -- Service : Run Algorithm`));
+        }
+        console.log("code", code)
+        console.log("function_parameters", function_parameters);
+        console.log("sibgle paramter", functionName[1]);
+        console.log("first_test_input", first_test_input);
+        console.log("first_test_output", first_test_output);
+
+        function_parameters.forEach((parameter) => {
+            input = `${parameter} = ${first_test_input}`;
+        });
+        code = input + '\n' + code + '\n' + `${print_type}(${functionName[1]}(${function_parameters[0].split(" ")[1]}))`;
+
+
+
+        //create random file name
         const random = Math.random().toString(36).substring(7);
 
-        if (!allowedLanguages.includes(language)) {
-            return _res.status(400).send('Desteklenmeyen dil');
-        }
 
         let command = '';
 
         switch (language) {
-            case 'php':
-                command = `php ${random}.php`;
+            case 'java':
+                command = `javac ${random}.java && java ${random}`;
+                break;
+            case 'csharp':
+                command = `csc ${random}.cs && ${random}.exe`;
                 break;
             case 'python':
                 command = `python ${random}.py`;
                 break;
             case 'javascript':
                 command = `node ${random}.js`;
-                break;
-            case 'c':
-                command = `gcc ${random}.c -o ${random}.exe && ./${random}.exe`;
-                break;
-            case 'cpp':
-                command = `g++ ${random}.cpp -o ${random}.exe && ./${random}.exe`;
                 break;
             default:
                 return _res.status(400).send('Desteklenmeyen dil');
@@ -81,9 +137,17 @@ const run_algorithm = async (_req, _res) => {
         const filePath = `./${command.split(' ')[1]}`;
 
         await fs.writeFile(filePath, code, (err) => {
+            if (err) {
+                console.error(chalk.bold(`${getTimestamp()} Status Code : 500 -- Error : ${err} -- Service : Run Algorithm`));
+                _res.status(500).json({
+                    message: "Unexpected error occurred while writing file",
+                    status_code: "500",
+                    status: "error",
+                });
+            }
         });
 
-        await runAndClean(command, filePath, _res);
+        await runAndClean(command, filePath, _res , first_test_input , first_test_output);
     } catch (error) {
         console.error('Hata:', error);
         _res.status(500).send('Beklenmeyen bir hata oluştu');
@@ -112,6 +176,7 @@ const add_algorithm = async (_req, _res) => {
         description: _req.body.description,
         real_life_application: _req.body.real_life_application,
         time_complexity_analysis: _req.body.time_complexity_analysis,
+        parameter_list: _req.body.parameter_list,
         example_input: _req.body.example_input,
         example_output: _req.body.example_output,
         missing_part: _req.body.missing_part,
@@ -240,10 +305,7 @@ const update_algorithm = async (_req, _res) => {
         if (question) {
             // Update the question
             Object.assign(question, _req.body);
-            const updatedQuestion = await question.findByIdAndUpdate(_req.params.algorithm_id, question, {
-                new: true,
-                runValidators: true
-            });
+            const updatedQuestion = await algorithm_question_model.findByIdAndUpdate(_req.params.algorithm_id, question,);
             if (updatedQuestion) {
                 console.log(chalk.bold(`${getTimestamp()} Status Code : 200 -- Message : Algorithm Updated -- Service : Algorithm Update`));
                 return _res.status(200).json({
