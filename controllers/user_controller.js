@@ -387,7 +387,6 @@ const login = async (_req, _res) => {
                     secure: true, // "true" yerine "true" olarak ayarlanmalı
                     httpOnly: true, // "true" yerine "true" olarak ayarlanmalı
                 });
-
                 _res.cookie("access_token", access_token, {
                     maxAge: 60 * 1000, // 1 minute
                     sameSite: "None",
