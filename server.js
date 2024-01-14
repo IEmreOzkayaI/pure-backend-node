@@ -47,8 +47,44 @@ app.use("/api/level", level_router);
 app.use("/api/notification", notification_router);
 app.use("/api/package", package_router);
 
-app.use("*", (_req, _res) => {
-    _res.status(404).json({error: "Page not found mu 🤕?"});
+app.use("*", (_req, res) => {
+    res.status(404).send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                .container {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100vw;
+                    height: 100vh;
+                    font-family: Ubuntu, sans-serif;
+                }
+
+                .header {
+                    font-size: 1.5rem;
+                    display: flex;
+                    align-items: center;
+                }
+
+                .bold {
+                    font-size: 1.5rem;
+                    font-weight: bold;
+                    padding: 0 .5rem;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    PURE <span class="bold">|</span> This is main route of the API
+                </div>
+            </div>
+        </body>
+        </html>
+    `);
 });
 
 // Sunucu oluşturma
