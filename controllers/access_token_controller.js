@@ -34,6 +34,7 @@ const access_token = async (_req, _res) => {
                         secure: true, // "true" yerine "true" olarak ayarlanmalı
                         httpOnly: true, // "true" yerine "true" olarak ayarlanmalı
                     });
+                    console.log(chalk.bold(`${getTimestamp()} Status Code : 200 -- Success : Access Token is created -- Service : refresh_token`,_req.query.originalUrl));
                     _res.redirect(_req.query.originalUrl);
                 });
             } catch (error) {
