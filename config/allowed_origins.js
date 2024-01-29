@@ -5,7 +5,7 @@ const allowed_origins = [
     "http://localhost:8080",
     "https://the-pure.netlify.app",
     "https://the-pure.tech",
-    "https://sea-lion-app-skma6.ondigitalocean.app/login"
+    "https://sea-lion-app-skma6.ondigitalocean.app"
 ];
 
 export default allowed_origins;
