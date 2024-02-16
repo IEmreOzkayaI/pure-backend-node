@@ -10,7 +10,7 @@ const test_question_schema = new mongoose.Schema({
     topic: {
         type: String
     },
-    level_id: {
+    level: {
         type: mongoose.Schema.Types.UUID,
         ref: "Level"
     },
@@ -19,7 +19,7 @@ const test_question_schema = new mongoose.Schema({
         type: String
     },
     // question
-    content: {
+    question: {
         type: String,
         required: true
     },
