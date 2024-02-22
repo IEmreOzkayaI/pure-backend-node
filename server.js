@@ -35,7 +35,10 @@ app.disable("x-powered-by");
 app.get("/api/user/forgot-password", (_req, _res) => {
     _res.render("forgot-password");
 })
-
+app.get("/deneme", (_req, _res) => {
+    console.log(_req.headers)
+    _res.send("deneme")
+})
 /** Router Connection */
 app.use("/api/user", user_router);
 app.use("/api/access", token_router);
@@ -94,6 +97,6 @@ const server = http.createServer(app);
 server.setTimeout(5000); // Örnek olarak sunucu zaman aşımını 5 saniye olarak ayarla
 
 // Sunucuyu dinleme
-server.listen(process.env.PORT, () => {
+server.listen(3001, () => {
     console.log(`Server running on port ${process.env.PORT}`);
 });

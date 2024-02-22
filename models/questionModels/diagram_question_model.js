@@ -18,8 +18,16 @@ const diagram_question_model = new mongoose.Schema({
         type: mongoose.Schema.Types.UUID,
         ref: "Level",
     },
+    real_life_application: {
+        type: String,
+        required: true,
+    },
     description: { // soru içeriği
         type: String,
+        required: true,
+    },
+    additional_resources_about_topic: {
+        type: Array,
         required: true,
     },
     answer: {
@@ -28,6 +36,10 @@ const diagram_question_model = new mongoose.Schema({
     },
     answer_explanation: {
         type: String,
+        required: true,
+    },
+    interactive_steps: {
+        type: Array,
         required: true,
     },
     created_at: {

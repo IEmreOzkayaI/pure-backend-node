@@ -13,7 +13,8 @@ question_router.route("/add").post(question_controller.add);
 question_router.route("/update").put(question_controller.update);
 question_router.route("/get_all").get(question_controller.get_all);
 question_router.route("/delete/:question_id").delete(question_controller.delete_);
-question_router.route("/get/:question_id").get(question_controller.get_by_question_id);
+question_router.route("/get").get(question_controller.get_by_question_id);
+question_router.route("/").get(question_controller.get);
 
 /** Algorithm Questions */
 question_router.route("/add_algorithm").post(algorithm_question_controller.add_algorithm);
