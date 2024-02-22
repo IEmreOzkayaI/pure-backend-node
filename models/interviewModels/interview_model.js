@@ -45,9 +45,13 @@ const interview_schema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    closed_at: {
-        type: Date,
-        default: Date.now
+    start_date: {
+        type: String,
+        required: true
+    },
+    end_date: {
+        type: String,
+        required: true
     },
     status: {
         type: String,

@@ -8,6 +8,7 @@ import algorithm_question_model from "../models/questionModels/algorithm_questio
 import Diagram_question_model from "../models/questionModels/diagram_question_model.js";
 import uuidBuffer from "uuid-buffer";
 import test_question_model from "../models/questionModels/test_question_model.js";
+import level_model from "../models/level_model.js";
 // @desc    Get all interviews
 // @route   GET /api/interview/get_all
 // @access  Private
@@ -53,13 +54,15 @@ const add_interview = async (_req, _res) => {
     const interview = await interview_model.create({
         name: _req.body.name,
         description: _req.body.description,
+        interview_time: _req.body.interview_time,
         questions: {
             diagram_question_list: diagram_questions,
             algorithm_question_list: algorithm_questions,
             test_question_list: test_questions,
         },
         company_list: _req.body.company_list,
-        interview_time: _req.body.interview_time,
+        start_date: _req.body.start_date,
+        end_date: _req.body.end_date,
     });
 
     if (!interview) {
@@ -123,6 +126,35 @@ const get_by_interview_id = async (_req, _res) => {
         status_code: "200",
         status: "success",
         data: read_interview_dto
+    });
+};
+
+const get_by_company_id = async (_req, _res) => {
+    const interviews = await interview_model.find({
+        company_list: _req.params.company_id
+    });
+
+
+    const extracted_interviews = interviews.map(interview => {
+        return {
+            id: interview._id,
+            name: interview.name,
+            start_date: interview.start_date,
+            end_date: interview.end_date,
+            question_amount: interview.questions.diagram_question_list.length + interview.questions.algorithm_question_list.length + interview.questions.test_question_list.length
+        }
+    })
+
+    if (!interviews) {
+        console.error(chalk.bold(`${getTimestamp()} Status Code : 500 -- Error : Interviews are not found -- Service : Interview Get By Company Id`));
+        return _res.status(500).send("Interviews are not found");
+    }
+
+    return _res.status(200).json({
+        message: "Interviews are found",
+        status_code: "200",
+        status: "success",
+        data: extracted_interviews
     });
 };
 
@@ -236,5 +268,6 @@ export default {
     update_result,
     delete_result,
     get_result_by_user_id,
+    get_by_company_id
 };
 

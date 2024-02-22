@@ -105,6 +105,7 @@ const get = async (_req, _res) => {
                     question_topic ? { level: level_id._id, topic: question_topic } : { level: level_id._id },
                     projection
                 );
+
                 test_questions.forEach((question, index) => {
                     let questionObj = question.toObject();
                     questionObj.type = "Test";

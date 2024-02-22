@@ -12,43 +12,56 @@ import Algorithm_question_model from "../../models/questionModels/algorithm_ques
 // @route   POST /api/question/add_test
 // @access  Private
 const add_test = async (_req, _res) => {
-
-    if (!_req.body.level) {
-        console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Level is required -- Service : Diagram Add`));
-        return _res.status(400).send("Level is required");
-    }
-    const level_id = await Level_model.findOne({_id: _req.body.level});
-    if (!level_id) {
-        console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Level is not found -- Service : Diagram Add`));
-        return _res.status(400).send("Level is not found");
+    // Gelen verilerin dizi olup olmadığını kontrol et
+    if (!Array.isArray(_req.body)) {
+        return _res.status(400).send("Data should be an array");
     }
 
-    const test_question = await Test_question_model.create({
-        topic: _req.body.topic,
-        level: _req.body.level,
-        context: _req.body.context,
-        question: _req.body.question,
-        choices: _req.body.choices,
-        answer: _req.body.answer,
-        answer_explanation: _req.body.answer_explanation,
-    })
+    // Tüm objeleri işle
+    const promises = _req.body.map(async (testData) => {
+        if (!testData.level) {
+            console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Level is required -- Service : Diagram Add`));
+            return _res.status(400).send("Level is required");
+        }
 
-    if (!test_question) {
-        console.error(chalk.bold(`${getTimestamp()} Status Code : 500 -- Error : Test question is not created -- Service : Test Add`));
-        return _res.status(500).send("Test question is not created");
-    }
+        const level_id = await Level_model.findOne({_id: testData.level});
+        if (!level_id) {
+            console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Level is not found -- Service : Diagram Add`));
+            return _res.status(400).send("Level is not found");
+        }
+
+        const test_question = await Test_question_model.create({
+            name: testData.name,
+            topic: testData.topic,
+            level: testData.level,
+            context: testData.context,
+            question: testData.question,
+            choices: testData.choices,
+            answer: testData.answer,
+            answer_explanation: testData.answer_explanation,
+        });
+
+        if (!test_question) {
+            console.error(chalk.bold(`${getTimestamp()} Status Code : 500 -- Error : Test question is not created -- Service : Test Add`));
+            return _res.status(500).send("Test question is not created");
+        }
+    });
+
+    // Tüm promise'leri bekleyerek sonucu döndür
+    await Promise.all(promises);
 
     return _res.status(200).json({
-        message: "Test Question Created",
+        message: "All Test Questions Created",
         status_code: "200",
         status: "success"
     });
 };
 
+
 // @desc    Get all test questions
 // @route   GET /api/question/get_all_test
 // @access  Private
-const get_all_test =async (_req, _res) => {
+const get_all_test = async (_req, _res) => {
     try {
         const questions = await Test_question_model.find({});
         if (!questions) {
@@ -108,7 +121,7 @@ const get_test_by_id = async (_req, _res) => {
 // @desc    Update test question
 // @route   PUT /api/question/update_test/:test_id
 // @access  Private
-const update_test =async (_req, _res) => {
+const update_test = async (_req, _res) => {
     try {
         const question = await Test_question_model.findById(_req.params.test_id);
         if (question) {
@@ -134,7 +147,8 @@ const update_test =async (_req, _res) => {
     } catch (error) {
         console.error(chalk.bold(`${getTimestamp()} Status Code : 500 -- Error : ${error} -- Service : Test Update`));
         return _res.status(500).json({message: 'Server Error'});
-    }};
+    }
+};
 
 // @desc    Delete test question
 // @route   DELETE /api/question/delete_test/:test_id
@@ -152,7 +166,8 @@ const delete_test = async (_req, _res) => {
     } catch (error) {
         console.error(chalk.bold(`${getTimestamp()} Status Code : 500 -- Error : ${error} -- Service : Test Delete`));
         return _res.status(500).json({message: 'Server Error'});
-    }};
+    }
+};
 
 // @desc    Get test question by level
 // @route   GET /api/question/get_test/:level_id
@@ -173,7 +188,8 @@ const get_test_by_level = async (_req, _res) => {
     } catch (error) {
         console.error(chalk.bold(`${getTimestamp()} Status Code : 500 -- Error : ${error} -- Service : Test Get By Level`));
         return _res.status(500).json({message: 'Server Error'});
-    }};
+    }
+};
 
 const test_question_controller = {
     add_test,

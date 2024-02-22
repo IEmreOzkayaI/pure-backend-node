@@ -4,7 +4,7 @@ import level_controller from "../controllers/level_controller.js";
 
 const level_router = express.Router();
 
-level_router.use(validate_access_token_handler);
+// level_router.use(validate_access_token_handler);
 
 level_router.route("/add").post(level_controller.add);
 level_router.route("/get_all").get(level_controller.get_all);

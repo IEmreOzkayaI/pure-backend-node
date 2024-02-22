@@ -7,16 +7,16 @@ const test_question_schema = new mongoose.Schema({
             return uuid()
         }
     },
+    name: {
+        type: String,
+        required: true
+    },
     topic: {
         type: String
     },
     level: {
         type: mongoose.Schema.Types.UUID,
         ref: "Level"
-    },
-    // algorithm , description . text , real life scenario
-    context: {
-        type: String
     },
     // question
     question: {

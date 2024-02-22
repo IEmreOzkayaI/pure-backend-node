@@ -19,12 +19,16 @@ const add_diagram = async (_req, _res) => {
     }
 
     const diagram_question = await diagram_question_model.create({
-        topic: _req.body.topic,
+
         name: _req.body.name,
+        topic: _req.body.topic,
         level: _req.body.level,
+        real_life_application: _req.body.real_life_application,
         description: _req.body.description,
         answer: _req.body.answer,
         answer_explanation: _req.body.answer_explanation,
+        additional_resources_about_topic: _req.body.additional_resources_about_topic,
+        interactive_steps: _req.body.interactive_steps,
     });
 
     if (!diagram_question) {
@@ -79,6 +83,10 @@ const get_diagram_question_part_by_id = async (_req, _res) => {
                     topic: question.topic,
                     level: question.level.name,
                     description: question.description,
+                    real_life_application: question.real_life_application,
+                    additional_resources_about_topic: question.additional_resources_about_topic,
+                    interactive_steps: question.interactive_steps,
+
                 }
                 return _res.json(read_diagram_dto);
             } else {
@@ -135,7 +143,7 @@ const update_diagram = async (_req, _res) => {
         if (question) {
             // Update the question
             Object.assign(question, _req.body);
-            const updatedQuestion = await question.findByIdAndUpdate(_req.params.diagram_id, question, {
+            const updatedQuestion = await diagram_question_model.findByIdAndUpdate(_req.params.diagram_id, question, {
                 new: true,
                 runValidators: true
             });
