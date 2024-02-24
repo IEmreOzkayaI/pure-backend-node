@@ -97,6 +97,6 @@ const server = http.createServer(app);
 server.setTimeout(5000); // Örnek olarak sunucu zaman aşımını 5 saniye olarak ayarla
 
 // Sunucuyu dinleme
-server.listen(3001, () => {
+server.listen(process.env.PORT, () => {
     console.log(`Server running on port ${process.env.PORT}`);
 });
