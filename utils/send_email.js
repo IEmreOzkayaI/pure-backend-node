@@ -30,7 +30,7 @@ const send_email = async (email, subject, type, text) => {
 		html_body = `
 	<div style="background-color: #f4f4f4; padding: 20px;">
 	  <div style="background-color: #ffffff; max-width: 600px; margin: 0 auto; padding: 20px; border-radius: 5px; box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.1);">
-  
+
 		<h2 style="color: #333;">Hesap Doğrulama</h2>
 		<p>Lütfen Hesap Doğrulama Kodunu İlgili Sayfaya Giriniz. </p>
 		<div style="display: flex;justify-content: center;">
@@ -41,6 +41,22 @@ const send_email = async (email, subject, type, text) => {
 		<div  style="width: 30px; height: 40px; border: 1px solid #ccc; border-radius: 10px; text-align: center; font-size: 24px; margin: 0 5px; line-height: 40px; box-shadow: 3px 3px 5px 0px rgba(0, 0, 0, 0.3); font-family: 'Roboto', sans-serif;">${text.charAt(4)}</div>
 		<div  style="width: 30px; height: 40px; border: 1px solid #ccc; border-radius: 10px; text-align: center; font-size: 24px; margin: 0 5px; line-height: 40px; box-shadow: 3px 3px 5px 0px rgba(0, 0, 0, 0.3); font-family: 'Roboto', sans-serif;">${text.charAt(5)}</div>
 	  </div>
+		<p>Aramıza Hoşgeldiniz!</p>
+	  </div>
+	</div>
+  `;
+	}
+
+	if (type === "interview_register") {
+		html_body = `
+	<div style="background-color: #f4f4f4; padding: 20px;">
+	  <div style="background-color: #ffffff; max-width: 600px; margin: 0 auto; padding: 20px; border-radius: 5px; box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.1);">
+
+		<h2 style="color: #333;">Mülakat Başvurusu</h2>
+		<p>Başvurunuz başarı ile alınmıştır.</p>
+		<br/>
+		<p>Bu adımdan sonra şirketin sizlere mülakat bağlantısını göndermesini bekleyiniz.</p>
+		<br/>
 		<p>Aramıza Hoşgeldiniz!</p>
 	  </div>
 	</div>

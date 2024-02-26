@@ -45,6 +45,10 @@ const individual_user_schema = new mongoose.Schema({
 		required: true,
 		default: "regular", // free, premium , interview
 	},
+	cover_letter: {
+	  type: String,
+		required: false,
+	},
 	notification_list: [
 		{
 			type: mongoose.Schema.Types.UUID,

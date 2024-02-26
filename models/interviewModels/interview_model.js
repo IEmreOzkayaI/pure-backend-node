@@ -33,6 +33,10 @@ const interview_schema = new mongoose.Schema({
         type: mongoose.Schema.Types.UUID,
         ref: "Company_User",
     }, ],
+    interviewee_list: [{
+        type: mongoose.Schema.Types.UUID,
+        ref: "Individual_User",
+    }, ],
     interview_time: {
         type: String,
         required: true
