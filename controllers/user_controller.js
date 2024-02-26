@@ -432,7 +432,12 @@ const logout = async (_req, _res) => {
         _res.clearCookie("refresh_token", {httpOnly: true});
         _res.clearCookie("access_token", {httpOnly: true});
         console.info(chalk.green.bold(`${getTimestamp()} Status Code : 204 -- Info : User Logged Out -- ID : ${found_user._id}`));
-        return _res.status(200).json({message: "User is logged out !", status_code: "200", status: "success" , redirect:"/"});
+        return _res.status(200).json({
+            message: "User is logged out !",
+            status_code: "200",
+            status: "success",
+            redirect: "/"
+        });
     } catch (error) {
         console.error(chalk.bold(`${getTimestamp()} Status Code : 503 -- Error : ${error} -- Service : Logout`));
         return _res.status(503).json({message: "Server Error", status_code: "503", status: "error"});
@@ -596,6 +601,25 @@ const current = async (_req, _res) => {
     }
 };
 
+
+const get_individual_user = async (_req, _res) => {
+    try {
+        const user = await Individual_User.findOne({_id: _req.params.individual_user_id});
+        if (!user) {
+            return _res.status(404).json({message: "User Not Found"});
+        }
+        return _res.status(200).json({
+            message: "User Found",
+            data: user,
+            status_code: "200",
+            status: "success"
+        });
+    } catch (error) {
+        console.error(chalk.bold(`${getTimestamp()} Status Code : 503 -- Error : ${error} -- Service : Get Individual User`));
+        return _res.status(503).json({message: "Server Error"});
+    }
+}
+
 const user_controller = {
     register,
     login,
@@ -605,6 +629,7 @@ const user_controller = {
     current,
     confirm,
     re_confirm,
+    get_individual_user
 };
 export default user_controller;
 

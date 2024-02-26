@@ -16,7 +16,7 @@
     rimraf "^3.0.2"
     semver "^7.3.5"
     tar "^6.1.11"
-
+g
 "@mongodb-js/saslprep@^1.1.0":
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/@mongodb-js/saslprep/-/saslprep-1.1.3.tgz#ef77edae4061cdc856ea2d355d582e9b49fae8fe"

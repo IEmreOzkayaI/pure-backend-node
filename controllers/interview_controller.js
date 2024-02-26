@@ -9,6 +9,15 @@ import Diagram_question_model from "../models/questionModels/diagram_question_mo
 import uuidBuffer from "uuid-buffer";
 import test_question_model from "../models/questionModels/test_question_model.js";
 import level_model from "../models/level_model.js";
+import json from "jsonwebtoken";
+import Individual_User from "../models/user_models/individual_user_model.js";
+import Common_User from "../models/user_models/common_user_model.js";
+import dotenv from "dotenv";
+import bcrypt from "bcrypt";
+import user_controller from "./user_controller.js";
+import send_email from "../utils/send_email.js";
+import * as Pure_OTP from "../utils/pure_otp.js";
+
 // @desc    Get all interviews
 // @route   GET /api/interview/get_all
 // @access  Private
@@ -112,14 +121,20 @@ const get_by_interview_id = async (_req, _res) => {
     question_list.push(...test_question_list);
     const question_amount = diagram_questions.length + algorithm_questions.length + test_questions.length;
 
+    let end_date = interview.end_date.split('-')
+    end_date = new Date(end_date[2], end_date[1] - 1, end_date[0]);
+    const reachable_time = Math.floor((new Date() - end_date) / 1000);
+    let interview_share_link = json.sign({interview_id: interview._id}, process.env.INTERVIEW_SIGN_SECRET, {expiresIn: reachable_time});
+    interview_share_link = `http://localhost:3000/interview/signUp/${btoa(interview_share_link)}`;
     const read_interview_dto = {
         name: interview.name,
         description: interview.description,
         questions: question_list,
         interview_time: interview.interview_time,
         question_amount: question_amount,
+        share_link:interview_share_link,
+        interviewee_list: interview.interviewee_list
     }
-    console.log("read_interview_dto", read_interview_dto)
 
     return _res.status(200).json({
         message: "Interview is found",
@@ -214,6 +229,104 @@ const delete_interview = async (_req, _res) => {
     }
 };
 
+//@desc Register user to interview
+//@route POST /api/interview/register_user_to_interview/:interview_id
+//@access Private
+const register_user_to_interview = async (_req, _res) => {
+  const signed_interview_id = atob(_req.params.interview_id);
+  const interview_id = json.verify(signed_interview_id, process.env.INTERVIEW_SIGN_SECRET, (err, decoded) => {
+    if (err) {
+      console.error(chalk.bold(`${getTimestamp()} Status Code : 401 -- Error : ${err} -- Service : Register User To Interview`));
+      return _res.status(401).json({message: 'Invalid Token'});
+    }
+    return decoded.interview_id;
+  });
+  const interview = await interview_model.findById(interview_id);
+
+  if (!interview) {
+      console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Interview Not Found -- Service : Register User To Interview`));
+      return _res.status(404).json({message: 'Interview not found'});
+  }
+
+  try {
+      let DB_access = Individual_User;
+      let user_id_field = "individual_user_id";
+      //----- Profile Check
+      if (_req.body.email === "" || _req.body.password === "") {
+          console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Email or Password Not Found -- Service : Register`));
+          return _res.status(400).send({message: "Email or Password Not Found", status_code: "400", status: "error"});
+      }
+
+      if (!(_req.body.role !== "Company_User" || _req.body.role !== "Individual_User" || _req.body.role !== "Admin_User")) {
+          console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User Role Not Found -- Service : Register`));
+          return _res.status(400).send({message: "User Profile Not Found", status_code: "400", status: "error"});
+      }
+
+      if (_req.body.status !== undefined) {
+          console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Status Can Not Send -- Service : Register`));
+          return _res.status(400).send({
+              message: "User status can not send specifically",
+              status_code: "400",
+              status: "error"
+          });
+      }
+
+      try {
+          const is_user_available = await Common_User.findOne({email: _req.body.email});
+          if (is_user_available) throw new Error("User Already Exists");
+      } catch (error) {
+          console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : ${error} -- Service : Register`));
+          return _res.status(400).json({message: "User Already Exists", status_code: "400", status: "error"});
+      }
+
+      //----- User Register
+      const user_register_info = {..._req.body};
+      delete user_register_info.role;
+
+
+      user_register_info.password = await bcrypt.hash(Buffer.from(_req.body.password, "utf-8"), 10);
+      //----- User Register to DB & Response
+      try {
+          const user_registered = await DB_access.create(user_register_info);
+          if (!user_registered) {
+              throw new Error("User Register Error");
+          }
+          console.info(chalk.green.bold(`${getTimestamp()} Status Code : 201 -- Info : User Saved -- ID : ${user_registered._id}  -- User DB`));
+          const userId = user_registered._id.toString();
+          //------------------
+          const query = {};
+          query[user_id_field] = user_registered._id;
+          const secret_key = Pure_OTP.generateSecretKey();
+          await Common_User.create({
+              email: _req.body.email,
+              role: _req.body.role,
+              user_id: userId,
+              totp_secret_key: secret_key
+          });
+          console.info(chalk.green.bold(`${getTimestamp()} Status Code : 201 -- Info : User Secret Saved -- ID : ${user_registered._id} -- Auth DB`));
+          //------------------
+
+          send_email(_req.body.email, "Interview Application Registered", "interview_register");
+
+          interview.interviewee_list.push(userId);
+          await interview.save();
+
+          console.info(chalk.green.bold(`${getTimestamp()} Status Code : 201 -- Info : User Registered To Interview -- ID : ${user_registered._id}`));
+          return _res.status(201).json({
+              message: "User Registered To Interview",
+              status_code: "201",
+              status: "success"
+          });
+      } catch (error) {
+          console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : ${error} -- Service : Register`));
+          return _res.status(400).json({message: "Invalid User Data", status_code: "400", status: "error"});
+      }
+  } catch (error) {
+      console.error(chalk.bold(`${getTimestamp()} Status Code : 503 -- Error : ${error} -- Service : Register`));
+      return _res.status(503).json({message: "Server Error", status_code: "503", status: "error"});
+  }
+}
+
 //@desc Get all interview results
 //@route GET /api/interview/get_all_result
 //@access Private
@@ -268,6 +381,7 @@ export default {
     update_result,
     delete_result,
     get_result_by_user_id,
-    get_by_company_id
-};
+    get_by_company_id,
+    register_user_to_interview
 
+};

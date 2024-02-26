@@ -22,5 +22,7 @@ user_router.route("/current").get(validate_access_token_handler, user_controller
 user_router.route("/confirm").post(user_controller.confirm);
 user_router.route("/re-confirm").get(user_controller.re_confirm);
 
+user_router.route("/individual_user/:individual_user_id").get(user_controller.get_individual_user);
+
 
 export default user_router;
