@@ -609,7 +609,7 @@ const get_individual_user = async (_req, _res) => {
             return _res.status(404).json({message: "User Not Found"});
         }
         return _res.status(200).json({
-            message: "User Found",
+            message: "User Found Operation Successful",
             data: user,
             status_code: "200",
             status: "success"
