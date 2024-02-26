@@ -59,7 +59,7 @@ const add_interview = async (_req, _res) => {
             $in: _req.body.questions.test_question_list.map(id => id)
         }
     })
-
+// asd
     const interview = await interview_model.create({
         name: _req.body.name,
         description: _req.body.description,
