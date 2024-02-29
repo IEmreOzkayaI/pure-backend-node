@@ -7,10 +7,10 @@ import multer from "multer";
 // interview_router.use(validate_access_token_handler);
 
 const storage = multer.diskStorage({
-  destination: function (req, cover_letter, cb) {
+  destination: function (_req, cover_letter, cb) {
     cb(null, 'uploads/') // Dosyaların kaydedileceği klasör
   },
-  filename: function (req, cover_letter, cb) {
+  filename: function (_req, cover_letter, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
     cb(null, 'cover_letter-' + uniqueSuffix + '.pdf')
   }

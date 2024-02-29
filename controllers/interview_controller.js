@@ -17,6 +17,7 @@ import bcrypt from "bcrypt";
 import user_controller from "./user_controller.js";
 import send_email from "../utils/send_email.js";
 import * as Pure_OTP from "../utils/pure_otp.js";
+import fs from "fs";
 
 // @desc    Get all interviews
 // @route   GET /api/interview/get_all
@@ -233,6 +234,9 @@ const delete_interview = async (_req, _res) => {
 //@route POST /api/interview/register_user_to_interview/:interview_id
 //@access Private
 const register_user_to_interview = async (_req, _res) => {
+  const pdfBuffer = fs.readFileSync(_req.file.path);
+
+
   const signed_interview_id = atob(_req.params.interview_id);
   const interview_id = json.verify(signed_interview_id, process.env.INTERVIEW_SIGN_SECRET, (err, decoded) => {
     if (err) {
@@ -281,6 +285,9 @@ const register_user_to_interview = async (_req, _res) => {
 
       //----- User Register
       const user_register_info = {..._req.body};
+      user_register_info.cover_letter =  pdfBuffer
+
+      console.log("_req.body",user_register_info)
       delete user_register_info.role;
 
 
