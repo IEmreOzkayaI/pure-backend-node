@@ -60,7 +60,7 @@ const interview_schema = new mongoose.Schema({
     status: {
         type: String,
         required: true,
-        default: "PENDING"
+        default: "ACTIVE" // ACTIVE, PASSIVE, DELETED
     },
 });
 

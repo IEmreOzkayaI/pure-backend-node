@@ -9,7 +9,6 @@ import Diagram_question_model from "../models/questionModels/diagram_question_mo
 import uuidBuffer from "uuid-buffer";
 import test_question_model from "../models/questionModels/test_question_model.js";
 import level_model from "../models/level_model.js";
-import json from "jsonwebtoken";
 import Individual_User from "../models/user_models/individual_user_model.js";
 import Common_User from "../models/user_models/common_user_model.js";
 import dotenv from "dotenv";
@@ -18,6 +17,8 @@ import user_controller from "./user_controller.js";
 import send_email from "../utils/send_email.js";
 import * as Pure_OTP from "../utils/pure_otp.js";
 import fs from "fs";
+import jwt from "jsonwebtoken";
+import Auth from "../models/auth_model.js";
 
 // @desc    Get all interviews
 // @route   GET /api/interview/get_all
@@ -93,12 +94,30 @@ const add_interview = async (_req, _res) => {
 // @route   GET /api/interview/get/:interview_id
 // @access  Private
 const get_by_interview_id = async (_req, _res) => {
-    const interview = await interview_model.findById(_req.params.interview_id);
+    const interview = await interview_model.findById(_req.interview_signature_info.interview_id);
+    const interview_result = await interview_result_model.findOne({interview_id: _req.interview_signature_info.interview_id, user_id: _req.interview_signature_info.user_id});
     let question_list = []
     if (!interview) {
         console.error(chalk.bold(`${getTimestamp()} Status Code : 500 -- Error : Interview is not found -- Service : Interview Get By Interview Id`));
         return _res.status(500).send("Interview is not found");
     }
+
+    const currentTime = new Date();
+    const interviewCreationTime = new Date(interview_result.created_at);
+    const [minutes, seconds] = interview.interview_time.split(':').map(Number);
+    const totalInterviewTime = (minutes * 60 + seconds) * 1000;
+    const elapsedTime = currentTime - interviewCreationTime;
+    const is_interview_time_expired = elapsedTime > totalInterviewTime;
+    if (interview_result.status=== "COMPLETED" || is_interview_time_expired ) {
+        console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Interview is already completed -- Service : Interview Get By Interview Id`));
+        return _res.status(400).json({
+            message: "Interview is already completed",
+            status_code: "400",
+            status: "success",
+            data: interview_result
+        });
+    }
+
     const diagram_questions = await Diagram_question_model.find({
         _id: {
             $in: interview.questions.diagram_question_list.map(item => uuidBuffer.toString(item))
@@ -125,7 +144,7 @@ const get_by_interview_id = async (_req, _res) => {
     let end_date = interview.end_date.split('-')
     end_date = new Date(end_date[2], end_date[1] - 1, end_date[0]);
     const reachable_time = Math.floor((new Date() - end_date) / 1000);
-    let interview_share_link = json.sign({interview_id: interview._id}, process.env.INTERVIEW_SIGN_SECRET, {expiresIn: reachable_time});
+    let interview_share_link = jwt.sign({interview_id: interview._id}, process.env.INTERVIEW_SIGN_SECRET, {expiresIn: reachable_time});
     interview_share_link = `http://localhost:3000/interview/signUp/${btoa(interview_share_link)}`;
     const read_interview_dto = {
         name: interview.name,
@@ -238,7 +257,7 @@ const register_user_to_interview = async (_req, _res) => {
 
 
   const signed_interview_id = atob(_req.params.interview_id);
-  const interview_id = json.verify(signed_interview_id, process.env.INTERVIEW_SIGN_SECRET, (err, decoded) => {
+  const interview_id = jwt.verify(signed_interview_id, process.env.INTERVIEW_SIGN_SECRET, (err, decoded) => {
     if (err) {
       console.error(chalk.bold(`${getTimestamp()} Status Code : 401 -- Error : ${err} -- Service : Register User To Interview`));
       return _res.status(401).json({message: 'Invalid Token'});
@@ -289,6 +308,7 @@ const register_user_to_interview = async (_req, _res) => {
 
       console.log("_req.body",user_register_info)
       delete user_register_info.role;
+      user_register_info.status = "ACTIVE";
 
 
       user_register_info.password = await bcrypt.hash(Buffer.from(_req.body.password, "utf-8"), 10);
@@ -330,6 +350,198 @@ const register_user_to_interview = async (_req, _res) => {
       }
   } catch (error) {
       console.error(chalk.bold(`${getTimestamp()} Status Code : 503 -- Error : ${error} -- Service : Register`));
+      return _res.status(503).json({message: "Server Error", status_code: "503", status: "error"});
+  }
+}
+
+const send_interview = async (_req, _res) => {
+  try{
+    const {interview_id, user_id_list} = _req.body;
+    const interview = await interview_model.findOne({_id: interview_id});
+    if(!interview){
+      console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Interview Not Found -- Service : Send Interview`));
+      return _res.status(404).json({message: "Interview Not Found", status_code: "404", status: "error"});
+    }
+    if(user_id_list.length === 0){
+      console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User List Not Found -- Service : Send Interview`));
+      return _res.status(400).json({message: "User List Not Found", status_code: "400", status: "error"});
+    }
+    for(let i = 0; i < user_id_list.length; i++){
+      const user = await Individual_User.findOne({_id: user_id_list[i]});
+      if(!user){
+        console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : User Not Found -- Service : Send Interview`));
+        return _res.status(404).json({message: "User Not Found", status_code: "404", status: "error"});
+      }
+      if(interview.interviewee_list.includes(user._id)){
+        let end_date = interview.end_date.split('-')
+        end_date = new Date(end_date[2], end_date[1] - 1, end_date[0]);
+        const reachable_time = Math.floor((new Date() - end_date) / 1000);
+        let interview_solve_link = jwt.sign({user_id: user._id, interview_id: interview._id}, process.env.INTERVIEW_PLAYGROUND_SIGN_SECRET, {expiresIn: reachable_time});
+        interview_solve_link = `http://localhost:3000/interview/login/${btoa(interview_solve_link)}`;
+        console.log("interview_solve_link",interview_solve_link)
+        send_email(user.email,"Interview Link", "interview_solve_link",interview_solve_link);
+      }
+      else{
+        console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User ${user._id} Not Found In Interview -- Service : Send Interview`));
+      }
+    }
+    return _res.status(200).json({message: "Interview Sent", status_code: "200", status: "success"});
+  }catch(error){
+    console.error(chalk.bold(`${getTimestamp()} Status Code : 503 -- Error : ${error} -- Service : Send Interview`));
+    return _res.status(503).json({message: "Server Error", status_code: "503", status: "error"});
+  }
+}
+
+const login_user_to_interview = async (_req, _res) => {
+  try {
+      let is_user_available = "";
+      let is_password_match = "";
+      let user_id_field = "individual_user_id";
+      //----- Input Check
+      if (_req.body.email === "" || _req.body.password === "" || _req.body.terms === "") {
+          console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Email or Password or Terms Not Found -- Service : Login To Interview`));
+          return _res.status(400).send({message: "Email or Password or Terms Not Found", status_code: "400", status: "error"});
+      }
+      //----- User Exist Check
+      try {
+          is_user_available = await Common_User.findOne({email: _req.body.email});
+          if (!is_user_available) throw new Error("User Not Found");
+      } catch (error) {
+          console.error(chalk.bold(`${getTimestamp()} Status Code : 401 -- Error : ${error} : Email -- Service : Login To Interview`));
+          return _res.status(401).json({message: "Invalid Credentials", status_code: "401", status: "error"});
+      }
+
+      //----- User Check
+      try {
+          const check_user_availability = await Individual_User.findOne({email: _req.body.email});
+          if (!check_user_availability) throw new Error("User Not Found In Related DB");
+          is_user_available = {is_user_available, check_user_availability};
+      } catch (error) {
+          console.error(chalk.bold(`${getTimestamp()} Status Code : 401 -- Error : ${error} -- Service : Login To Interview`));
+          return _res.status(401).json({message: "Invalid Credentials", status_code: "401", status: "error"});
+      }
+      //----- User Status Check
+      if (is_user_available.check_user_availability.status !== "ACTIVE") {
+          const query = {};
+          query[user_id_field] = is_user_available.check_user_availability._id;
+
+          console.error(chalk.bold(`${getTimestamp()} Status Code : 401 -- Error : User is not active -- Service : Login -- ID : ${is_user_available.is_user_available.email}`));
+          return _res.status(401).json({message: "User is not active", status_code: "401", status: "error"});
+      }
+      //----- DB Access Type Check
+      try {
+          const query = {};
+          query[user_id_field] = is_user_available.check_user_availability._id;
+          const is_user_refresh_token_available = await Auth.findOne({...query});
+          if (is_user_refresh_token_available) throw new Error("User Already Logged In");
+      } catch (error) {
+          console.error(chalk.bold(`${getTimestamp()} Status Code : 401 -- Error : ${error} -- Service : Login To Interview`));
+          return _res.status(401).json({message: "User Already Logged In", status_code: "401", status: "error"});
+      }
+      //----- Password Check
+      try {
+          is_password_match = await bcrypt.compare(Buffer.from(_req.body.password, "utf-8"), is_user_available.check_user_availability.password);
+          if (!is_password_match) throw new Error("Password Not Match");
+      } catch (error) {
+          console.error(chalk.bold(`${getTimestamp()} Status Code : 401 -- Error : ${error} -- Service : Login To Interview`));
+          return _res.status(401).json({
+              message: "Invalid Credentials : Password",
+              status_code: "401",
+              status: "error"
+          });
+      }
+      const interview = await interview_model.findOne({_id:_req.interview_signature_info.interview_id})
+      if(!interview.interviewee_list.includes(is_user_available.check_user_availability._id)){
+        console.error(chalk.bold(`${getTimestamp()} Status Code : 401 -- Error : User ${is_user_available.check_user_availability._id} Not Found In Interview -- Service : Login To Interview`));
+        return _res.status(401).json({message: "User Not Found In Interview", status_code: "401", status: "error"});
+      }
+      const interview_time = parseInt(interview.interview_time.split(":")[0])+ 10 + "m";
+
+      //----- IF Interview Time is Over or Already Completed
+
+      const interview_result = await interview_result_model.findOne({interview_id: _req.interview_signature_info.interview_id, user_id: _req.interview_signature_info.user_id});
+      if(interview_result){
+        const currentTime = new Date();
+        const interviewCreationTime = new Date(interview_result.created_at);
+        const [minutes, seconds] = interview.interview_time.split(':').map(Number);
+        const totalInterviewTime = (minutes * 60 + seconds) * 1000;
+        const elapsedTime = currentTime - interviewCreationTime;
+        const is_interview_time_expired = elapsedTime > totalInterviewTime;
+        if (interview_result.status=== "COMPLETED" || is_interview_time_expired ) {
+            console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Interview is already completed -- Service : Interview Get By Interview Id`));
+            return _res.status(400).json({
+                message: "Interview is already completed",
+                status_code: "400",
+                status: "success",
+                data: interview_result
+            });
+        }
+      }
+
+      //----- JWT Token Create
+      const interview_access_token = jwt.sign({
+        user_id:_req.interview_signature_info.user_id,
+        interview_id:_req.interview_signature_info.interview_id
+      }, process.env.ACCESS_TOKEN_SECRET, {expiresIn: "1m"});
+
+      const interview_refresh_token = jwt.sign({
+          user_id:_req.interview_signature_info.user_id,
+          interview_id:_req.interview_signature_info.interview_id
+      }, process.env.REFRESH_TOKEN_SECRET, {expiresIn: interview_time});
+
+      //----- Token Save to DB & Cookie Set & Response
+      try {
+          const query = {};
+          query[user_id_field] = is_user_available.check_user_availability._id;
+          const delay_time = 2;
+          const current_user = {...query, refresh_token:interview_refresh_token, expire_at: new Date(Date.now() + (parseInt(interview.interview_time.split(":")[0]) + delay_time )  * 60 * 1000)};
+
+          console.log("current_user",current_user)
+          console.log("parseInt", parseInt(interview.interview_time.split(":")[0]) + 10)
+
+          const maxAgeInMilliseconds = ((parseInt(interview.interview_time.split(":")[0]) * 60) + 10) * 1000;
+
+          const auth_result = await Auth.create(current_user);
+          if (!auth_result) throw new Error("Auth DB Error");
+          _res.cookie("interview_refresh_token", interview_refresh_token, {
+              maxAge: maxAgeInMilliseconds,
+              sameSite: "None",
+              //domain: "the-pure.tech",
+              secure: true, // "true" yerine "true" olarak ayarlanmalı
+              httpOnly: true, // "true" yerine "true" olarak ayarlanmalı
+          });
+          _res.cookie("interview_access_token", interview_access_token, {
+              maxAge: 60 * 1000, // 1 minute
+              sameSite: "None",
+              //domain: "the-pure.tech",
+              secure: true, // "true" yerine "true" olarak ayarlanmalı
+              httpOnly: true, // "true" yerine "true" olarak ayarlanmalı
+          });
+          const is_interview_result_exist = await interview_result_model.findOne({user_id:_req.interview_signature_info.user_id,interview_id:_req.interview_signature_info.interview_id});
+          if(!is_interview_result_exist){
+            const initiate_interview_result = await interview_result_model.create({user_id:_req.interview_signature_info.user_id,interview_id:_req.interview_signature_info.interview_id});
+            if (!initiate_interview_result) {
+                console.error(chalk.bold(`${getTimestamp()} Status Code : 503 -- Error : Interview Result DB Error -- Service : Login To Interview`));
+                return _res.status(503).json({message: "Server Error", status_code: "503", status: "error"});
+            };
+          }
+
+          console.info(chalk.green.bold(`${getTimestamp()} Status Code : 200 -- Info : User Authenticated -- ID : ${is_user_available.check_user_availability._id}`));
+          return _res.status(200).json({
+              message: "User Authenticated",
+              status_code: "200",
+              status: "success",
+              data:{
+                interview_status:is_interview_result_exist.status || "INITIATED"
+              }
+          });
+      } catch (error) {
+          console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : ${error} -- Service : Login To Interview`));
+          return _res.status(404).json({message: "Invalid Auth Data", status_code: "404", status: "error"});
+      }
+  } catch
+      (error) {
+      console.error(chalk.bold(`${getTimestamp()} Status Code : 503 -- Error : ${error} -- Service : Login To Interview`));
       return _res.status(503).json({message: "Server Error", status_code: "503", status: "error"});
   }
 }
@@ -389,6 +601,7 @@ export default {
     delete_result,
     get_result_by_user_id,
     get_by_company_id,
-    register_user_to_interview
-
+    register_user_to_interview,
+    send_interview,
+    login_user_to_interview
 };
