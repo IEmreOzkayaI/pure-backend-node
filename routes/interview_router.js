@@ -26,6 +26,7 @@ interview_router.route("/get_by_company_id/:company_id").get(interview_controlle
 interview_router.route("/update_interview/:interview_id").put(interview_controller.update_interview);
 interview_router.route("/delete_interview/:interview_id").delete(interview_controller.delete_interview);
 interview_router.route("/register_user_to_interview/:interview_id").post(upload.single('cover_letter'),interview_controller.register_user_to_interview);
+interview_router.route('/get_interviewees/:interview_id').get(interview_controller.get_interviewees);
 
 
 /** Interview Result Model routes */
