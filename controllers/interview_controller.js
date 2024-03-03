@@ -90,7 +90,7 @@ const add_interview = async (_req, _res) => {
 // @desc    Get interview by interview id
 // @route   GET /api/interview/get/:interview_id
 // @access  Private
-const get_by_interview_id = async (_req, _res) => {
+const get_by_interview_signature = async (_req, _res) => {
 	const interview = await interview_model.findById(_req.interview_signature_info.interview_id);
 	const interview_result = await interview_result_model.findOne({interview_id: _req.interview_signature_info.interview_id, user_id: _req.interview_signature_info.user_id});
 	let question_list = [];
@@ -161,6 +161,62 @@ const get_by_interview_id = async (_req, _res) => {
 	});
 };
 
+const get_by_interview_id = async (_req, _res) => {
+	const interview = await interview_model.findById(_req.params.interview_id);
+	let question_list = [];
+	if (!interview) {
+		console.error(chalk.bold(`${getTimestamp()} Status Code : 500 -- Error : Interview is not found -- Service : Interview Get By Interview Id`));
+		return _res.status(500).send("Interview is not found");
+	}
+
+
+	const diagram_questions = await Diagram_question_model.find({
+		_id: {
+			$in: interview.questions.diagram_question_list.map((item) => uuidBuffer.toString(item)),
+		},
+	});
+	const algorithm_questions = await algorithm_question_model.find({
+		_id: {
+			$in: interview.questions.algorithm_question_list.map((item) => uuidBuffer.toString(item)),
+		},
+	});
+	const test_questions = await test_question_model.find({
+		_id: {
+			$in: interview.questions.test_question_list.map((item) => uuidBuffer.toString(item)),
+		},
+	});
+	const diagram_question_list = diagram_questions.map((item, index) => ({question: item, number: index, type: "Diagram"}));
+	question_list.push(...diagram_question_list);
+	const algorithm_question_list = algorithm_questions.map((item, index) => ({question: item, number: question_list.length + index, type: "Algorithm"}));
+	question_list.push(...algorithm_question_list);
+	const test_question_list = test_questions.map((item, index) => ({question: item, number: question_list.length + index, type: "Test"}));
+	question_list.push(...test_question_list);
+	const question_amount = diagram_questions.length + algorithm_questions.length + test_questions.length;
+
+	let end_date = interview.end_date.split("-");
+	end_date = new Date(end_date[2], end_date[1] - 1, end_date[0]);
+	const reachable_time = Math.floor((new Date() - end_date) / 1000);
+	let interview_share_link = jwt.sign({interview_id: interview._id}, process.env.INTERVIEW_SIGN_SECRET, {expiresIn: reachable_time});
+	interview_share_link = `${_req.protocol}://${_req.headers.host}/interview/signUp/${btoa(interview_share_link)}`; //TODO: FİX THE HOST
+	const read_interview_dto = {
+		name: interview.name,
+		description: interview.description,
+		questions: question_list,
+		interview_time: interview.interview_time,
+		question_amount: question_amount,
+		share_link: interview_share_link,
+		interviewee_list: interview.interviewee_list,
+		status: interview.status,
+	};
+
+	return _res.status(200).json({
+		message: "Interview is found",
+		status_code: "200",
+		status: "success",
+		data: read_interview_dto,
+	});
+};
+
 const get_by_company_id = async (_req, _res) => {
 
     const interviews = await interview_model.find({
@@ -175,7 +231,8 @@ const get_by_company_id = async (_req, _res) => {
             start_date: interview.start_date,
             end_date: interview.end_date,
             question_amount: interview.questions.diagram_question_list.length + interview.questions.algorithm_question_list.length + interview.questions.test_question_list.length,
-            interviewee_list: interview.interviewee_list
+            interviewee_list: interview.interviewee_list,
+			status: interview.status,
         }
     })
 
@@ -477,12 +534,14 @@ const login_user_to_interview = async (_req, _res) => {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 401 -- Error : ${error} -- Service : Login To Interview`));
 			return _res.status(401).json({
 				message: "Invalid Credentials : Password",
-				status_code: "401",
+				status_code: "401", 
 				status: "error",
 			});
 		}
 		// Controll Log In user is same with tokenized info
-		if (is_user_available.is_user_available._id !== _req.interview_signature_info.user_id) {
+		console.log("is_user_available", is_user_available.is_user_available._id);
+		console.log("_req.interview_signature_info.user_id", _req.interview_signature_info.user_id);
+		if (is_user_available.check_user_availability._id !== _req.interview_signature_info.user_id) {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 401 -- Error : User ${is_user_available.is_user_available._id} Not Found In Interview -- Service : Login To Interview`));
 			return _res.status(401).json({message: "User Not Found In Interview", status_code: "401", status: "error"});
 		}
@@ -635,6 +694,7 @@ export default {
 	get_all_interview,
 	add_interview,
 	get_by_interview_id,
+	get_by_interview_signature,
 	update_interview,
 	delete_interview,
 	get_all_result,
