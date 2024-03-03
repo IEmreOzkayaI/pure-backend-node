@@ -162,32 +162,68 @@ const get_by_interview_id = async (_req, _res) => {
 };
 
 const get_by_company_id = async (_req, _res) => {
-	const interviews = await interview_model.find({
-		company_list: _req.params.company_id,
-	});
 
-	const extracted_interviews = interviews.map((interview) => {
-		return {
-			id: interview._id,
-			name: interview.name,
-			start_date: interview.start_date,
-			end_date: interview.end_date,
-			question_amount: interview.questions.diagram_question_list.length + interview.questions.algorithm_question_list.length + interview.questions.test_question_list.length,
-		};
-	});
+    const interviews = await interview_model.find({
+        company_list: _req.params.company_id
+    });
 
-	if (!interviews) {
-		console.error(chalk.bold(`${getTimestamp()} Status Code : 500 -- Error : Interviews are not found -- Service : Interview Get By Company Id`));
-		return _res.status(500).send("Interviews are not found");
-	}
 
-	return _res.status(200).json({
-		message: "Interviews are found",
-		status_code: "200",
-		status: "success",
-		data: extracted_interviews,
-	});
+    const extracted_interviews = interviews.map(interview => {
+        return {
+            id: interview._id,
+            name: interview.name,
+            start_date: interview.start_date,
+            end_date: interview.end_date,
+            question_amount: interview.questions.diagram_question_list.length + interview.questions.algorithm_question_list.length + interview.questions.test_question_list.length,
+            interviewee_list: interview.interviewee_list
+        }
+    })
+
+    if (!interviews) {
+        console.error(chalk.bold(`${getTimestamp()} Status Code : 500 -- Error : Interviews are not found -- Service : Interview Get By Company Id`));
+        return _res.status(500).send("Interviews are not found");
+    }
+
+    return _res.status(200).json({
+        message: "Interviews are found",
+        status_code: "200",
+        status: "success",
+        data: extracted_interviews
+    });
 };
+// get interviewees of an interview then get their details from  /individual_user/:individual_user_id from user_controller
+//but interviewees are kept as buffer so we need to convert them to string
+const get_interviewees = async (_req, _res) => {
+    const interview = await interview_model.findById(_req.params
+    .interview_id);
+    if (!interview) {
+        console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Interview Not Found -- Service : Interview Get Interviewees`));
+        return _res.status(404).json({message: 'Interview not found'});
+    }
+    const interviewees = interview.interviewee_list.map(interviewee => uuidBuffer.toString(interviewee));
+    // const interviewee_details = await user_controller.get_individual_user(
+    //   interviewees
+    // );
+    //for every interviewee in interviewees, get their details from /individual_user/:individual_user_id
+    let interviewee_details = [];
+    for (let i = 0; i < interviewees.length; i++) {
+        const interviewee = await Individual_User.findById(interviewees[i]);
+        if (!interviewee) {
+            console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Interviewee Not Found -- Service : Interview Get Interviewees`));
+            return _res.status(404).json({message: 'Interviewee not found'});
+        }
+        interviewee_details.push(interviewee);
+    }
+    
+    return _res.status(200).json({
+        message: "Interviewees are found",
+        status_code: "200",
+        status: "success",
+        data: interviewee_details
+    });
+};
+
+
 
 // @desc    Update interview by interview id
 // @route   PUT /api/interview/update/:interview_id
@@ -610,5 +646,6 @@ export default {
 	get_by_company_id,
 	register_user_to_interview,
 	send_interview,
+  get_interviewees,
 	login_user_to_interview,
 };
