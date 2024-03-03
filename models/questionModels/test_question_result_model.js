@@ -7,7 +7,7 @@ const test_question_result_schema = new mongoose.Schema({
             return uuid()
         }
     },
-    testQuestion_id: {
+    test_question_id: {
         type: mongoose.Schema.Types.UUID,
         ref: "Test_Question",
     },
