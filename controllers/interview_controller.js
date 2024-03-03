@@ -197,7 +197,7 @@ const get_by_interview_id = async (_req, _res) => {
 	end_date = new Date(end_date[2], end_date[1] - 1, end_date[0]);
 	const reachable_time = Math.floor((new Date() - end_date) / 1000);
 	let interview_share_link = jwt.sign({interview_id: interview._id}, process.env.INTERVIEW_SIGN_SECRET, {expiresIn: reachable_time});
-	interview_share_link = `${_req.protocol}://${_req.headers.host}/interview/signUp/${btoa(interview_share_link)}`; //TODO: FİX THE HOST
+	interview_share_link = `${_req.protocol}://localhost:3000/interview/signUp/${btoa(interview_share_link)}`; //TODO: FİX THE HOST
 	const read_interview_dto = {
 		name: interview.name,
 		description: interview.description,
