@@ -145,7 +145,7 @@ const get_by_interview_id = async (_req, _res) => {
     end_date = new Date(end_date[2], end_date[1] - 1, end_date[0]);
     const reachable_time = Math.floor((new Date() - end_date) / 1000);
     let interview_share_link = jwt.sign({interview_id: interview._id}, process.env.INTERVIEW_SIGN_SECRET, {expiresIn: reachable_time});
-    interview_share_link = `http://localhost:3000/interview/signUp/${btoa(interview_share_link)}`;
+    interview_share_link = `${_req.protocol}://${_req.headers.host}/interview/signUp/${btoa(interview_share_link)}`;
     const read_interview_dto = {
         name: interview.name,
         description: interview.description,
@@ -377,7 +377,7 @@ const send_interview = async (_req, _res) => {
         end_date = new Date(end_date[2], end_date[1] - 1, end_date[0]);
         const reachable_time = Math.floor((new Date() - end_date) / 1000);
         let interview_solve_link = jwt.sign({user_id: user._id, interview_id: interview._id}, process.env.INTERVIEW_PLAYGROUND_SIGN_SECRET, {expiresIn: reachable_time});
-        interview_solve_link = `http://localhost:3000/interview/login/${btoa(interview_solve_link)}`;
+        interview_solve_link = `${_req.protocol}://${_req.headers.host}/interview/login/${btoa(interview_solve_link)}`;
         console.log("interview_solve_link",interview_solve_link)
         send_email(user.email,"Interview Link", "interview_solve_link",interview_solve_link);
       }
@@ -479,12 +479,12 @@ const login_user_to_interview = async (_req, _res) => {
       }
 
       //----- JWT Token Create
-      const interview_access_token = jwt.sign({
+      const access_token = jwt.sign({
         user_id:_req.interview_signature_info.user_id,
         interview_id:_req.interview_signature_info.interview_id
       }, process.env.ACCESS_TOKEN_SECRET, {expiresIn: "1m"});
 
-      const interview_refresh_token = jwt.sign({
+      const refresh_token = jwt.sign({
           user_id:_req.interview_signature_info.user_id,
           interview_id:_req.interview_signature_info.interview_id
       }, process.env.REFRESH_TOKEN_SECRET, {expiresIn: interview_time});
@@ -494,7 +494,7 @@ const login_user_to_interview = async (_req, _res) => {
           const query = {};
           query[user_id_field] = is_user_available.check_user_availability._id;
           const delay_time = 2;
-          const current_user = {...query, refresh_token:interview_refresh_token, expire_at: new Date(Date.now() + (parseInt(interview.interview_time.split(":")[0]) + delay_time )  * 60 * 1000)};
+          const current_user = {...query, refresh_token:refresh_token, expire_at: new Date(Date.now() + (parseInt(interview.interview_time.split(":")[0]) + delay_time )  * 60 * 1000)};
 
           console.log("current_user",current_user)
           console.log("parseInt", parseInt(interview.interview_time.split(":")[0]) + 10)
@@ -503,14 +503,14 @@ const login_user_to_interview = async (_req, _res) => {
 
           const auth_result = await Auth.create(current_user);
           if (!auth_result) throw new Error("Auth DB Error");
-          _res.cookie("interview_refresh_token", interview_refresh_token, {
+          _res.cookie("refresh_token", refresh_token, {
               maxAge: maxAgeInMilliseconds,
               sameSite: "None",
               //domain: "the-pure.tech",
               secure: true, // "true" yerine "true" olarak ayarlanmalı
               httpOnly: true, // "true" yerine "true" olarak ayarlanmalı
           });
-          _res.cookie("interview_access_token", interview_access_token, {
+          _res.cookie("access_token", access_token, {
               maxAge: 60 * 1000, // 1 minute
               sameSite: "None",
               //domain: "the-pure.tech",
@@ -532,7 +532,7 @@ const login_user_to_interview = async (_req, _res) => {
               status_code: "200",
               status: "success",
               data:{
-                interview_status:is_interview_result_exist.status || "INITIATED"
+                interview_status:is_interview_result_exist?.status || "INITIATED"
               }
           });
       } catch (error) {
