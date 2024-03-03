@@ -19,37 +19,43 @@ const interview_result_schema = new mongoose.Schema({
 
     interview_score: {
         type: Number,
-        required: true
+        required: true,
+        default: 0
     },
 
     try_count: {
         type: Number,
-        required: true
+        required: true,
+        default: 0
     },
 
     tab_leave_amount: {
         type: String,
-        required: true
+        required: true,
+        default: 0
     },
 
     search_usage_amount: {
         type: String,
-        required: true
+        required: true,
+        default: 0
     },
 
     time_spent: {
         type: Number,
-        required: true
+        required: true,
+        default: 0
+
     },
     privacy_policy: {
         type: Boolean,
         required: true,
-        default: false
+        default: true
     },
     terms_of_use: {
         type: Boolean,
         required: true,
-        default: false
+        default: true
     },
     created_at: {
         type: Date,
@@ -64,7 +70,7 @@ const interview_result_schema = new mongoose.Schema({
     status: {
         type: String,
         required: true,
-        default: "PENDING"
+        default: "INITIATED" // PENDING, INITIATED, COMPLETED
     },
 });
 

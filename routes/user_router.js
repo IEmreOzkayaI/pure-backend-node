@@ -23,6 +23,7 @@ user_router.route("/confirm").post(user_controller.confirm);
 user_router.route("/re-confirm").get(user_controller.re_confirm);
 
 user_router.route("/individual_user/:individual_user_id").get(user_controller.get_individual_user);
+user_router.route("/individual_user/cv/:individual_user_id").get(user_controller.get_cover_letter);
 
 
 export default user_router;

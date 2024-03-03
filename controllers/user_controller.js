@@ -620,6 +620,22 @@ const get_individual_user = async (_req, _res) => {
     }
 }
 
+
+const get_cover_letter = async (_req, _res) => {
+  try{
+    const user = await Individual_User.findOne({_id: _req.params.individual_user_id});
+       if (!user || !user.cover_letter) {
+         return _res.status(404).send('User or PDF not found');
+       }
+
+       // PDF dosyasını göndermeden önce uygun MIME türünü belirtiyoruz
+       // PDF dosyasını tarayıcıya gönderiyoruz
+       _res.send(user.cover_letter);
+  }catch(error){
+    console.error(chalk.bold(`${getTimestamp()} Status Code : 503 -- Error : ${error} -- Service : Get Cover Letter`));
+    return _res.status(503).json({message: "Server Error"});
+  }
+}
 const user_controller = {
     register,
     login,
@@ -629,7 +645,8 @@ const user_controller = {
     current,
     confirm,
     re_confirm,
-    get_individual_user
+    get_individual_user,
+    get_cover_letter
 };
 export default user_controller;
 
