@@ -22,7 +22,8 @@ const upload = multer({ storage: storage });
 /** Interview Model routes */
 interview_router.route("/add_interview").post(interview_controller.add_interview);
 interview_router.route("/get_all_interview").get(interview_controller.get_all_interview);
-interview_router.route("/get_by_interview_id/:interview_signature").get(validate_access_token_handler,extract_interview_token,interview_controller.get_by_interview_id);
+interview_router.route("/get_by_interview_signature/:interview_signature").get(validate_access_token_handler,extract_interview_token,interview_controller.get_by_interview_signature);
+interview_router.route("/get_by_interview_id/:interview_id").get(validate_access_token_handler,interview_controller.get_by_interview_id);
 interview_router.route("/get_by_company_id/:company_id").get(interview_controller.get_by_company_id);
 interview_router.route("/update_interview/:interview_id").put(interview_controller.update_interview);
 interview_router.route("/delete_interview/:interview_id").delete(interview_controller.delete_interview);
