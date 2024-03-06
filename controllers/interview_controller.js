@@ -343,15 +343,8 @@ const delete_interview = async (_req, _res) => {
 const register_user_to_interview = async (_req, _res) => {
 	const pdfBuffer = fs.readFileSync(_req.file.path);
 
-	const signed_interview_id = atob(_req.params.interview_id);
-	const interview_id = jwt.verify(signed_interview_id, process.env.INTERVIEW_SIGN_SECRET, (err, decoded) => {
-		if (err) {
-			console.error(chalk.bold(`${getTimestamp()} Status Code : 401 -- Error : ${err} -- Service : Register User To Interview`));
-			return _res.status(401).json({message: "Invalid Token"});
-		}
-		return decoded.interview_id;
-	});
-	const interview = await interview_model.findById(interview_id);
+	const signed_interview_id = _req.interview_signature_info.interview_id;
+	const interview = await interview_model.findById(signed_interview_id);
 
 	if (!interview) {
 		console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Interview Not Found -- Service : Register User To Interview`));
@@ -542,7 +535,7 @@ const login_user_to_interview = async (_req, _res) => {
 		console.log("is_user_available", is_user_available.is_user_available._id);
 		console.log("_req.interview_signature_info.user_id", _req.interview_signature_info.user_id);
 		if (is_user_available.check_user_availability._id !== _req.interview_signature_info.user_id) {
-			console.error(chalk.bold(`${getTimestamp()} Status Code : 401 -- Error : User ${is_user_available.is_user_available._id} Not Found In Interview -- Service : Login To Interview`));
+			console.error(chalk.bold(`${getTimestamp()} Status Code : 401 -- Error : User ${is_user_available.check_user_availability._id} Not Found In Interview -- Service : Login To Interview`));
 			return _res.status(401).json({message: "User Not Found In Interview", status_code: "401", status: "error"});
 		}
 
