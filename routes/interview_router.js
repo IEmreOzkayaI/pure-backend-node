@@ -27,7 +27,7 @@ interview_router.route("/get_by_interview_id/:interview_id").get(validate_access
 interview_router.route("/get_by_company_id/:company_id").get(interview_controller.get_by_company_id);
 interview_router.route("/update_interview/:interview_id").put(interview_controller.update_interview);
 interview_router.route("/delete_interview/:interview_id").delete(interview_controller.delete_interview);
-interview_router.route("/register_user_to_interview/:interview_id").post(upload.single('cover_letter'),interview_controller.register_user_to_interview);
+interview_router.route("/register_user_to_interview/:interview_signature").post(extract_interview_token,upload.single('cover_letter'),interview_controller.register_user_to_interview);
 interview_router.route("/login_user_to_interview/:interview_signature").post(extract_interview_token,interview_controller.login_user_to_interview);
 interview_router.route("/send").post(interview_controller.send_interview);
 interview_router.route('/get_interviewees/:interview_id').get(interview_controller.get_interviewees);
