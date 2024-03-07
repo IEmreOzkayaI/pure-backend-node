@@ -1,6 +1,6 @@
 import asyncHandler from "express-async-handler";
 import interview_model from "../models/interviewModels/interview_model.js";
-import interview_result_model from "../models/interviewModels/interview_result_model.js";
+import interview_result_model, {INTERVIEW_RESULT_STATUS_ENUM} from "../models/interviewModels/interview_result_model.js";
 import chalk from "chalk";
 import getTimestamp from "../utils/time_stamp.js";
 import diagram_question_model from "../models/questionModels/diagram_question_model.js";
@@ -105,10 +105,10 @@ const get_by_interview_signature = async (_req, _res) => {
 	const totalInterviewTime = (minutes * 60 + seconds) * 1000;
 	const elapsedTime = currentTime - interviewCreationTime;
 	const is_interview_time_expired = elapsedTime > totalInterviewTime;
-	if (interview_result.status === "COMPLETED" || is_interview_time_expired) {
-		console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Interview is already completed -- Service : Interview Get By Interview Id`));
+	if (interview_result.status === INTERVIEW_RESULT_STATUS_ENUM.REGISTERED || is_interview_time_expired) {
+		console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Interview is already registered -- Service : Interview Get By Interview Id`));
 		return _res.status(400).json({
-			message: "Interview is already completed",
+			message: "Interview is already registered",
 			status_code: "400",
 			status: "success",
 			data: interview_result,
@@ -169,7 +169,6 @@ const get_by_interview_id = async (_req, _res) => {
 		return _res.status(500).send("Interview is not found");
 	}
 
-
 	const diagram_questions = await Diagram_question_model.find({
 		_id: {
 			$in: interview.questions.diagram_question_list.map((item) => uuidBuffer.toString(item)),
@@ -219,69 +218,66 @@ const get_by_interview_id = async (_req, _res) => {
 };
 
 const get_by_company_id = async (_req, _res) => {
+	const interviews = await interview_model.find({
+		company_list: _req.params.company_id,
+	});
 
-    const interviews = await interview_model.find({
-        company_list: _req.params.company_id
-    });
-
-
-    const extracted_interviews = interviews.map(interview => {
-        return {
-            id: interview._id,
-            name: interview.name,
-            start_date: interview.start_date,
-            end_date: interview.end_date,
-            question_amount: interview.questions.diagram_question_list.length + interview.questions.algorithm_question_list.length + interview.questions.test_question_list.length,
-            interviewee_list: interview.interviewee_list,
+	const extracted_interviews = interviews.map((interview) => {
+		return {
+			id: interview._id,
+			name: interview.name,
+			start_date: interview.start_date,
+			end_date: interview.end_date,
+			question_amount: interview.questions.diagram_question_list.length + interview.questions.algorithm_question_list.length + interview.questions.test_question_list.length,
+			interviewee_list: interview.interviewee_list,
 			status: interview.status,
-        }
-    })
+		};
+	});
 
-    if (!interviews) {
-        console.error(chalk.bold(`${getTimestamp()} Status Code : 500 -- Error : Interviews are not found -- Service : Interview Get By Company Id`));
-        return _res.status(500).send("Interviews are not found");
-    }
+	if (!interviews) {
+		console.error(chalk.bold(`${getTimestamp()} Status Code : 500 -- Error : Interviews are not found -- Service : Interview Get By Company Id`));
+		return _res.status(500).send("Interviews are not found");
+	}
 
-    return _res.status(200).json({
-        message: "Interviews are found",
-        status_code: "200",
-        status: "success",
-        data: extracted_interviews
-    });
+	return _res.status(200).json({
+		message: "Interviews are found",
+		status_code: "200",
+		status: "success",
+		data: extracted_interviews,
+	});
 };
 // get interviewees of an interview then get their details from  /individual_user/:individual_user_id from user_controller
 //but interviewees are kept as buffer so we need to convert them to string
 const get_interviewees = async (_req, _res) => {
-    const interview = await interview_model.findById(_req.params
-    .interview_id);
-    if (!interview) {
-        console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Interview Not Found -- Service : Interview Get Interviewees`));
-        return _res.status(404).json({message: 'Interview not found'});
-    }
-    const interviewees = interview.interviewee_list.map(interviewee => uuidBuffer.toString(interviewee));
-    // const interviewee_details = await user_controller.get_individual_user(
-    //   interviewees
-    // );
-    //for every interviewee in interviewees, get their details from /individual_user/:individual_user_id
-    let interviewee_details = [];
-    for (let i = 0; i < interviewees.length; i++) {
-        const interviewee = await Individual_User.findById(interviewees[i]);
-        if (!interviewee) {
-            console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Interviewee Not Found -- Service : Interview Get Interviewees`));
-            return _res.status(404).json({message: 'Interviewee not found'});
-        }
-        interviewee_details.push(interviewee);
-    }
-    
-    return _res.status(200).json({
-        message: "Interviewees are found",
-        status_code: "200",
-        status: "success",
-        data: interviewee_details
-    });
+	const interview = await interview_model.findById(_req.params.interview_id);
+	if (!interview) {
+		console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Interview Not Found -- Service : Interview Get Interviewees`));
+		return _res.status(404).json({message: "Interview not found"});
+	}
+	const interviewees = interview.interviewee_list.map((interviewee) => uuidBuffer.toString(interviewee));
+	// const interviewee_details = await user_controller.get_individual_user(
+	//   interviewees
+	// );
+	//for every interviewee in interviewees, get their details from /individual_user/:individual_user_id
+	let interviewee_details = [];
+	for (let i = 0; i < interviewees.length; i++) {
+		let interviewee = await Individual_User.findById(interviewees[i]);
+		const interview_result = await interview_result_model.findOne({user_id: interviewees[i]});
+		if (!interviewee) {
+			console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Interviewee Not Found -- Service : Interview Get Interviewees`));
+			return _res.status(404).json({message: "Interviewee not found"});
+		}
+		interviewee = {...interviewee, ...interview_result};
+		interviewee_details.push(interviewee);
+	}
+
+	return _res.status(200).json({
+		message: "Interviewees are found",
+		status_code: "200",
+		status: "success",
+		data: interviewee_details,
+	});
 };
-
-
 
 // @desc    Update interview by interview id
 // @route   PUT /api/interview/update/:interview_id
@@ -528,7 +524,7 @@ const login_user_to_interview = async (_req, _res) => {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 401 -- Error : ${error} -- Service : Login To Interview`));
 			return _res.status(401).json({
 				message: "Invalid Credentials : Password",
-				status_code: "401", 
+				status_code: "401",
 				status: "error",
 			});
 		}
@@ -556,10 +552,10 @@ const login_user_to_interview = async (_req, _res) => {
 			const totalInterviewTime = (minutes * 60 + seconds) * 1000;
 			const elapsedTime = currentTime - interviewCreationTime;
 			const is_interview_time_expired = elapsedTime > totalInterviewTime;
-			if (interview_result.status === "COMPLETED" || is_interview_time_expired) {
-				console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Interview is already completed -- Service : Interview Get By Interview Id`));
+			if (interview_result.status === INTERVIEW_RESULT_STATUS_ENUM.REGISTERED || is_interview_time_expired) {
+				console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Interview is already registered -- Service : Interview Get By Interview Id`));
 				return _res.status(400).json({
-					message: "Interview is already completed",
+					message: "Interview is already registered",
 					status_code: "400",
 					status: "success",
 					data: interview_result,
@@ -629,7 +625,7 @@ const login_user_to_interview = async (_req, _res) => {
 				status_code: "200",
 				status: "success",
 				data: {
-					interview_status: is_interview_result_exist?.status || "INITIATED",
+					interview_status: is_interview_result_exist?.status || INTERVIEW_RESULT_STATUS_ENUM.INITIATED,
 				},
 			});
 		} catch (error) {
@@ -684,6 +680,42 @@ const get_result_by_user_id = async (_req, _res) => {
 	return _res.send("Get By User Id");
 };
 
+const get_result_by_interview_signature = async (_req, _res) => {
+	const {interview_id, user_id} = _req.interview_signature_info;
+
+	let interview_result = await interview_result_model.findOne({interview_id, user_id});
+	const interview = await interview_model.findById(interview_id);
+	if (!interview_result) {
+		console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Interview Result Not Found -- Service : Get Result By Interview Signature`));
+		return _res.status(404).json({message: "Interview Result Not Found", status_code: "404", status: "error"});
+	}
+	interview_result = {...interview_result.toObject(), interview_name: interview.name};
+	return _res.status(200).json({message: "Interview Result Found", status_code: "200", status: "success", data: interview_result});
+};
+
+const update_result_status = async (_req, _res) => {
+	const {interview_id, user_id, status_name} = _req.body;
+	const interview_result = await interview_result_model.findOne({interview_id, user_id});
+	if (!interview_result) {
+		console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Interview Result Not Found -- Service : Update Result Status`));
+		return _res.status(404).json({message: "Interview Result Not Found", status_code: "404", status: "error"});
+	}
+	let date_updated_enum = {...INTERVIEW_RESULT_STATUS_ENUM[status_name]};
+	if (_req.body?.date) {
+		date_updated_enum.update_date = formatDate(new Date());
+		date_updated_enum.communication_date = _req.body?.date;
+	}
+	interview_result.status = date_updated_enum;
+	await interview_result.save();
+
+	return _res.status(200).json({message: "Interview Result Updated", status_code: "200", status: "success", data: interview_result});
+};
+
+function formatDate(date) {
+	const options = { day: '2-digit', month: 'short', year: 'numeric' };
+	return date.toLocaleDateString('en-US', options);
+  }
+
 export default {
 	get_all_interview,
 	add_interview,
@@ -700,6 +732,8 @@ export default {
 	get_by_company_id,
 	register_user_to_interview,
 	send_interview,
-  get_interviewees,
+	get_interviewees,
 	login_user_to_interview,
+	get_result_by_interview_signature,
+	update_result_status,
 };

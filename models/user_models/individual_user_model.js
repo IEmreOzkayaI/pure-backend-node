@@ -2,9 +2,12 @@ import mongoose from "mongoose";
 import {v4 as uuid} from "uuid";
 
 const individual_user_schema = new mongoose.Schema({
-	_id: { type: String, default: function genUUID() {
-			return uuid()
-		}},
+	_id: {
+		type: String,
+		default: function genUUID() {
+			return uuid();
+		},
+	},
 	name: {
 		type: String,
 		required: true,
@@ -46,9 +49,9 @@ const individual_user_schema = new mongoose.Schema({
 		default: "regular", // free, premium , interview
 	},
 	cover_letter: {
-  type: Buffer,
-  required: false,
-},
+		type: Buffer,
+		required: false,
+	},
 
 	notification_list: [
 		{
