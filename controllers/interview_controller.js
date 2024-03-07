@@ -142,7 +142,7 @@ const get_by_interview_signature = async (_req, _res) => {
 	end_date = new Date(end_date[2], end_date[1] - 1, end_date[0]);
 	const reachable_time = Math.floor((new Date() - end_date) / 1000);
 	let interview_share_link = jwt.sign({interview_id: interview._id}, process.env.INTERVIEW_SIGN_SECRET, {expiresIn: reachable_time});
-	interview_share_link = `${_req.protocol}://${_req.headers.host}/interview/signUp/${btoa(interview_share_link)}`;
+	interview_share_link = `${_req.protocol}://localhost:3000/interview/signUp/${btoa(interview_share_link)}`;
 	const read_interview_dto = {
 		name: interview.name,
 		description: interview.description,
@@ -199,6 +199,7 @@ const get_by_interview_id = async (_req, _res) => {
 	let interview_share_link = jwt.sign({interview_id: interview._id}, process.env.INTERVIEW_SIGN_SECRET, {expiresIn: reachable_time});
 	interview_share_link = `${_req.protocol}://localhost:3000/interview/signUp/${btoa(interview_share_link)}`; //TODO: FİX THE HOST
 	const read_interview_dto = {
+		_id: interview._id,
 		name: interview.name,
 		description: interview.description,
 		questions: question_list,
@@ -456,7 +457,7 @@ const send_interview = async (_req, _res) => {
 				end_date = new Date(end_date[2], end_date[1] - 1, end_date[0]);
 				const reachable_time = Math.floor((new Date() - end_date) / 1000);
 				let interview_solve_link = jwt.sign({user_id: user._id, interview_id: interview._id}, process.env.INTERVIEW_PLAYGROUND_SIGN_SECRET, {expiresIn: reachable_time});
-				interview_solve_link = `${_req.protocol}://${_req.headers.host}/interview/login/${btoa(interview_solve_link)}`;
+				interview_solve_link = `${_req.protocol}://localhost:3000/interview/login/${btoa(interview_solve_link)}`;
 				console.log("interview_solve_link", interview_solve_link);
 				send_email(user.email, "Interview Link", "interview_solve_link", interview_solve_link);
 			} else {
