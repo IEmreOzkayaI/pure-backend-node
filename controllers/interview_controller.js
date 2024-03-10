@@ -98,9 +98,13 @@ const get_by_interview_signature = async (_req, _res) => {
 		console.error(chalk.bold(`${getTimestamp()} Status Code : 500 -- Error : Interview is not found -- Service : Interview Get By Interview Id`));
 		return _res.status(500).send("Interview is not found");
 	}
+	if (!interview_result) {
+		console.error(chalk.bold(`${getTimestamp()} Status Code : 500 -- Error : Interview Result is not found -- Service : Interview Get By Interview Id`));
+		return _res.status(500).send("Interview Result is not found");
+	}
 
 	const currentTime = new Date();
-	const interviewCreationTime = new Date(interview_result.created_at);
+	const interviewCreationTime = new Date(interview_result?.created_at);
 	const [minutes, seconds] = interview.interview_time.split(":").map(Number);
 	const totalInterviewTime = (minutes * 60 + seconds) * 1000;
 	const elapsedTime = currentTime - interviewCreationTime;
@@ -262,12 +266,15 @@ const get_interviewees = async (_req, _res) => {
 	let interviewee_details = [];
 	for (let i = 0; i < interviewees.length; i++) {
 		let interviewee = await Individual_User.findById(interviewees[i]);
-		const interview_result = await interview_result_model.findOne({user_id: interviewees[i]});
+		let interview_result = await interview_result_model.findOne({user_id: interviewees[i]});
 		if (!interviewee) {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Interviewee Not Found -- Service : Interview Get Interviewees`));
 			return _res.status(404).json({message: "Interviewee not found"});
 		}
-		interviewee = {...interviewee, ...interview_result};
+		if (interview_result) {
+			interview_result = {...interview_result.toObject(), user_id: interview_result.user_id.toString("hex"), interview_id: interview_result.interview_id.toString("hex")};
+			interviewee = {...interviewee.toObject(), ...interview_result};
+		}
 		interviewee_details.push(interviewee);
 	}
 
@@ -290,7 +297,7 @@ const update_interview = async (_req, _res) => {
 			Object.assign(interview, _req.body);
 			const updatedInterview = await interview_model.findByIdAndUpdate(_req.params.interview_id, interview);
 			if (updatedInterview) {
-				console.log(chalk.bold(`${getTimestamp()} Status Code : 200 -- Message : Interview Updated -- Service : Interview Update`));
+				console.info(chalk.bold(`${getTimestamp()} Status Code : 200 -- Message : Interview Updated -- Service : Interview Update`));
 				return _res.status(200).json({
 					message: "Interview Updated",
 					status_code: "200",
@@ -383,7 +390,6 @@ const register_user_to_interview = async (_req, _res) => {
 		const user_register_info = {..._req.body};
 		user_register_info.cover_letter = pdfBuffer;
 
-		console.log("_req.body", user_register_info);
 		delete user_register_info.role;
 		user_register_info.status = "ACTIVE";
 
@@ -454,7 +460,6 @@ const send_interview = async (_req, _res) => {
 				const reachable_time = Math.floor((new Date() - end_date) / 1000);
 				let interview_solve_link = jwt.sign({user_id: user._id, interview_id: interview._id}, process.env.INTERVIEW_PLAYGROUND_SIGN_SECRET, {expiresIn: reachable_time});
 				interview_solve_link = `${_req.protocol}://localhost:3000/interview/login/${btoa(interview_solve_link)}`;
-				console.log("interview_solve_link", interview_solve_link);
 				send_email(user.email, "Interview Link", "interview_solve_link", interview_solve_link);
 			} else {
 				console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User ${user._id} Not Found In Interview -- Service : Send Interview`));
@@ -529,8 +534,6 @@ const login_user_to_interview = async (_req, _res) => {
 			});
 		}
 		// Controll Log In user is same with tokenized info
-		console.log("is_user_available", is_user_available.is_user_available._id);
-		console.log("_req.interview_signature_info.user_id", _req.interview_signature_info.user_id);
 		if (is_user_available.check_user_availability._id !== _req.interview_signature_info.user_id) {
 			console.error(chalk.bold(`${getTimestamp()} Status Code : 401 -- Error : User ${is_user_available.check_user_availability._id} Not Found In Interview -- Service : Login To Interview`));
 			return _res.status(401).json({message: "User Not Found In Interview", status_code: "401", status: "error"});
@@ -588,10 +591,6 @@ const login_user_to_interview = async (_req, _res) => {
 			query[user_id_field] = is_user_available.check_user_availability._id;
 			const delay_time = 2;
 			const current_user = {...query, refresh_token: refresh_token, expire_at: new Date(Date.now() + (parseInt(interview.interview_time.split(":")[0]) + delay_time) * 60 * 1000)};
-
-			console.log("current_user", current_user);
-			console.log("parseInt", parseInt(interview.interview_time.split(":")[0]) + 10);
-
 			const maxAgeInMilliseconds = (parseInt(interview.interview_time.split(":")[0]) * 60 + 10) * 1000;
 
 			const auth_result = await Auth.create(current_user);
@@ -684,7 +683,7 @@ const get_result_by_interview_signature = async (_req, _res) => {
 	const {interview_id, user_id} = _req.interview_signature_info;
 
 	let interview_result = await interview_result_model.findOne({interview_id, user_id});
-	const interview = await interview_model.findById(interview_id);
+	const interview = await interview_model.findById({_id: interview_id});
 	if (!interview_result) {
 		console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Interview Result Not Found -- Service : Get Result By Interview Signature`));
 		return _res.status(404).json({message: "Interview Result Not Found", status_code: "404", status: "error"});
@@ -695,7 +694,7 @@ const get_result_by_interview_signature = async (_req, _res) => {
 
 const update_result_status = async (_req, _res) => {
 	const {interview_id, user_id, status_name} = _req.body;
-	const interview_result = await interview_result_model.findOne({interview_id, user_id});
+	let interview_result = await interview_result_model.findOne({interview_id, user_id});
 	if (!interview_result) {
 		console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Interview Result Not Found -- Service : Update Result Status`));
 		return _res.status(404).json({message: "Interview Result Not Found", status_code: "404", status: "error"});
@@ -704,17 +703,20 @@ const update_result_status = async (_req, _res) => {
 	if (_req.body?.date) {
 		date_updated_enum.update_date = formatDate(new Date());
 		date_updated_enum.communication_date = _req.body?.date;
+	} else {
+		date_updated_enum.update_date = formatDate(new Date());
 	}
-	interview_result.status = date_updated_enum;
-	await interview_result.save();
+
+	interview_result = {...interview_result.toObject(), status: date_updated_enum};
+	await interview_result_model.findByIdAndUpdate(interview_result._id, interview_result);
 
 	return _res.status(200).json({message: "Interview Result Updated", status_code: "200", status: "success", data: interview_result});
 };
 
 function formatDate(date) {
-	const options = { day: '2-digit', month: 'short', year: 'numeric' };
-	return date.toLocaleDateString('en-US', options);
-  }
+	const options = {day: "2-digit", month: "short", year: "numeric"};
+	return date.toLocaleDateString("en-US", options);
+}
 
 export default {
 	get_all_interview,
