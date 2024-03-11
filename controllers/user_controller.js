@@ -623,6 +623,7 @@ const get_individual_user = async (_req, _res) => {
 
 const get_cover_letter = async (_req, _res) => {
   try{
+    console.log("_req.params.individual_user_id",_req.params.individual_user_id)
     const user = await Individual_User.findOne({_id: _req.params.individual_user_id});
        if (!user || !user.cover_letter) {
          return _res.status(404).send('User or PDF not found');
