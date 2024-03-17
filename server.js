@@ -18,7 +18,7 @@ import {connectDb} from "./config/db_connection.js";
 import dotenv from "dotenv";
 
 /** DB Connection */
-connectDb()
+connectDb();
 
 const app = express();
 dotenv.config();
@@ -32,13 +32,22 @@ app.use(express.json());
 app.use(cookieParser());
 app.disable("x-powered-by");
 
+app.use((req, res, next) => {
+	res.setTimeout(600000, () => {
+		console.error("Request has timed out.");
+		res.status(408).send("Request has timed out.");
+	});
+
+	next();
+});
+
 app.get("/api/user/forgot-password", (_req, _res) => {
-    _res.render("forgot-password");
-})
+	_res.render("forgot-password");
+});
 app.get("/deneme", (_req, _res) => {
-    console.log(_req.headers)
-    _res.send("deneme")
-})
+	console.log(_req.headers);
+	_res.send("deneme");
+});
 /** Router Connection */
 app.use("/api/user", user_router);
 app.use("/api/access", token_router);
@@ -51,7 +60,7 @@ app.use("/api/notification", notification_router);
 app.use("/api/package", package_router);
 
 app.use("*", (_req, res) => {
-    res.status(404).send(`
+	res.status(404).send(`
         <!DOCTYPE html>
         <html>
         <head>
@@ -98,5 +107,5 @@ server.setTimeout(5000); // Örnek olarak sunucu zaman aşımını 5 saniye olar
 
 // Sunucuyu dinleme
 server.listen(process.env.PORT, () => {
-    console.log(`Server running on port ${process.env.PORT}`);
+	console.log(`Server running on port ${process.env.PORT}`);
 });

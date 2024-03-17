@@ -15,6 +15,7 @@ question_router.route("/get_all").get(question_controller.get_all);
 question_router.route("/delete/:question_id").delete(question_controller.delete_);
 question_router.route("/get").get(question_controller.get_by_question_id);
 question_router.route("/").get(question_controller.get);
+question_router.route("/create_ai").post(question_controller.create_question);
 
 /** Algorithm Questions */
 question_router.route("/add_algorithm").post(algorithm_question_controller.add_algorithm);
@@ -34,7 +35,7 @@ question_router.route("/get_diagram_answer_part_by_id/:diagram_id").get(diagram_
 question_router.route("/update_diagram/:diagram_id").put(diagram_question_controller.update_diagram);
 question_router.route("/delete_diagram/:diagram_id").delete(diagram_question_controller.delete_diagram);
 question_router.route("/get_diagram/:level_id").get(diagram_question_controller.get_diagram_by_level);
-question_router.route("/save_diagram/:diagram_id").post(validate_access_token_handler,diagram_question_controller.save_diagram_answer);
+question_router.route("/save_diagram/:diagram_id").post(validate_access_token_handler, diagram_question_controller.save_diagram_answer);
 
 /** Test Questions */
 question_router.route("/add_test").post(test_question_controller.add_test);
@@ -43,6 +44,6 @@ question_router.route("/get_test/:test_id").get(test_question_controller.get_tes
 question_router.route("/update_test/:test_id").put(test_question_controller.update_test);
 question_router.route("/delete_test/:test_id").delete(test_question_controller.delete_test);
 question_router.route("/get_test/:level_id").get(test_question_controller.get_test_by_level);
-question_router.route("/save_test/:test_id").post(validate_access_token_handler,test_question_controller.save_test_answer);
+question_router.route("/save_test/:test_id").post(validate_access_token_handler, test_question_controller.save_test_answer);
 
 export default question_router;
