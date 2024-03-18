@@ -111,6 +111,10 @@ const interview_result_schema = new mongoose.Schema({
 		required: true,
 		default: INTERVIEW_RESULT_STATUS_ENUM.INITIATED,
 	},
+	questions: {
+		type: Array,
+		default: [],
+	},
 });
 
 export default mongoose.model("Interview_Result", interview_result_schema);

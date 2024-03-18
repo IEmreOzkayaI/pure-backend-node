@@ -41,5 +41,6 @@ interview_router.route("/update_result/:interview_result_id").put(interview_cont
 interview_router.route("/delete_result/:interview_result_id").delete(interview_controller.delete_result);
 interview_router.route("/get_result/:user_id").get(interview_controller.get_result_by_user_id);
 interview_router.route("/update_result_status").patch(interview_controller.update_result_status); //validate_access_token_handler
+interview_router.route("/finish_interview").post(interview_controller.finish_interview);
 
 export default interview_router;
