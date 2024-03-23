@@ -722,7 +722,7 @@ const finish_interview = async (_req, _res) => {
   //YAPILDI---- dbden sorulari cekip kontrol et idleri ile
   //YAPILDI---- interview result model e hangi sorunun dogru , yanlis oldugunu kaydet
   //YAPILDI---- inteview score da kaydedilecek
-  //Redirect ederken cors hatasi aliyor
+  //YAPILDI---- Redirect ederken cors hatasi aliyor
   try {
     const interview_signature = _req.body.interview_signature;
     const user_answers = _req.body.user_answers;
@@ -791,7 +791,7 @@ const finish_interview = async (_req, _res) => {
     } catch (error) {
       console.error(chalk.red(error));
     }
-    const score = questions.filter((question) => question.isTrue).length * 10;
+	const score = questions.filter((question) => question.isTrue).length * 100 / questions.length;
     //save the interview_result to db
     const interview_result = await interview_result_model.findOne({
       interview_id,
@@ -809,15 +809,20 @@ const finish_interview = async (_req, _res) => {
         status: "error",
       });
     }
-    interview_result.interview_score = score;
+    interview_result.interview_score = score.toFixed(2);
     interview_result.status = INTERVIEW_RESULT_STATUS_ENUM.EXAMINING;
     interview_result.questions = questions;
     await interview_result.save();
-    //after saving redirect user to /interview/tracker/:interview_signature
-    //with the interview signature
-    return _res.redirect(
-      `http://localhost:3000/interview/tracker/${interview_signature}`
-    );
+    
+	return _res.status(200).json({
+	  message: "Interview is finished",
+	  status_code: "200",
+	  status: "success",
+	  data: {
+		redirect_path: `/interview/tracker/${interview_signature}`,
+	  },
+	});
+    
   } catch (err) {
     console.error(chalk.red.bold("Error finishing the interview"), err);
     return _res.status(500).json({
