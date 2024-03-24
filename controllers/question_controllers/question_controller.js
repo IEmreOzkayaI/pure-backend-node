@@ -137,28 +137,32 @@ const get = async (_req, _res) => {
 };
 
 const create_question = async (_req, _res) => {
+	if (_req.body.type === "template") {
+		return _res.status(200).json({message: "Question created successfully"});
+	}
+	
 	const openai = new OpenAI({apiKey: process.env.GPT_API_KEY});
 	const level = _req.body.level;
 	const topic = _req.body.topic;
-	const question_type = _req.body.question_type;
+	const type = _req.body.type;
 	let prompt;
-	if (!level || !topic || !question_type) {
+	if (!level || !topic || !type) {
 		console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Bad Request -- Service : Create GPT`));
 		return _res.status(400).json({message: "Bad Request"});
 	}
-	if (question_type !== "algorithm" && question_type !== "diagram" && question_type !== "test") {
-		console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Bad Request -- Service : Create GPT`));
-		return _res.status(400).json({message: "Bad Request"});
-	}
-
-	if (level !== "beginner" && level !== "intermediate" && level !== "advanced") {
+	if (type !== "algorithm" && type !== "diagram" && type !== "test") {
 		console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Bad Request -- Service : Create GPT`));
 		return _res.status(400).json({message: "Bad Request"});
 	}
 
-	if (question_type === "algorithm") prompt = `topic: ${topic} level: ${level} \n ${algo_prompt}`;
-	if (question_type === "diagram") prompt = `topic: ${topic} level: ${level} \n ${diagram_prompt}`;
-	if (question_type === "test") prompt = `topic: ${topic} level: ${level} \n ${test_prompt}`;
+	if (level !== "beginner" && level !== "intermediate" && level !== "advance") {
+		console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Bad Request -- Service : Create GPT`));
+		return _res.status(400).json({message: "Bad Request"});
+	}
+
+	if (type === "algorithm") prompt = `topic: ${topic} level: ${level} \n ${algo_prompt}`;
+	if (type === "diagram") prompt = `topic: ${topic} level: ${level} \n ${diagram_prompt}`;
+	if (type === "test") prompt = `topic: ${topic} level: ${level} \n ${test_prompt}`;
 
 	try {
 		const gptResponse = await openai.chat.completions.create({
@@ -173,10 +177,10 @@ const create_question = async (_req, _res) => {
 		let data = gptResponse.choices[0].message.content;
 		console.log("data", data);
 		console.log("JSON.parse", JSON.parse(data));
-        data = JSON.parse(data);
+		data = JSON.parse(data);
 
 		const levelData = await level_model.findOne({name: level});
-		if (question_type === "algorithm") {
+		if (type === "algorithm") {
 			const questionTemplate = {
 				name: data.name,
 				topic: data.topic,
@@ -201,7 +205,7 @@ const create_question = async (_req, _res) => {
 			}
 			return _res.status(200).json({message: "Question created successfully", question});
 		}
-		if (question_type === "diagram") {
+		if (type === "diagram") {
 			const questionTemplate = {
 				name: data.name,
 				topic: data.topic,
@@ -220,7 +224,7 @@ const create_question = async (_req, _res) => {
 			}
 			return _res.status(200).json({message: "Question created successfully", question});
 		}
-		if (question_type === "test") {
+		if (type === "test") {
 			const questionTemplate = {
 				name: data.name,
 				topic: data.topic,
@@ -242,30 +246,6 @@ const create_question = async (_req, _res) => {
 		return _res.status(500).json({message: "Internal Server Error"});
 	}
 };
-
-function fixJsonString(jsonString) {
-	let fixedJsonString = "";
-	let errorPosition = -1;
-
-	for (let i = 0; i < jsonString.length; i++) {
-		const char = jsonString.charAt(i);
-		if (char.charCodeAt(0) < 32 && !["\n", "\r", "\t"].includes(char)) {
-			// Geçersiz kontrol karakterini bulduk
-			errorPosition = i;
-			break;
-		}
-	}
-
-	if (errorPosition !== -1) {
-		// Hatalı karakteri düzeltme
-		fixedJsonString = jsonString.substring(0, errorPosition) + " " + jsonString.substring(errorPosition + 1);
-		console.log("Hatalı karakter düzeltildi.");
-	}
-
-	return fixedJsonString;
-}
-
-const question_schema_handler = async (_req, _res, level, question_type, data) => {};
 
 const question_controller = {
 	get,
