@@ -673,10 +673,16 @@ const delete_result = async (_req, _res) => {
 };
 
 //@desc Get interview result by user id
-//@route GET /api/interview/get_result/:user_id
+//@route GET /api/interview/get_result/:user_id/:interview_id
 //@access Private
-const get_result_by_user_id = async (_req, _res) => {
-	return _res.send("Get By User Id");
+const get_result_by_user_id_interview_id = async (_req, _res) => {
+	const {interview_id, user_id} = _req.params;
+	const interview_result = await interview_result_model.findOne({interview_id, user_id});
+	if (!interview_result) {
+		console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Interview Result Not Found -- Service : Get Result By User Id`));
+		return _res.status(404).json({message: "Interview Result Not Found", status_code: "404", status: "error"});
+	}
+	return _res.status(200).json({message: "Interview Result Found", status_code: "200", status: "success", data: interview_result});
 };
 
 const get_result_by_interview_signature = async (_req, _res) => {
@@ -791,7 +797,7 @@ const finish_interview = async (_req, _res) => {
     } catch (error) {
       console.error(chalk.red(error));
     }
-	const score = questions.filter((question) => question.isTrue).length * 100 / questions.length;
+	const score = (100 / questions.length) * questions.filter((question) => question.isTrue).length;
     //save the interview_result to db
     const interview_result = await interview_result_model.findOne({
       interview_id,
@@ -846,7 +852,7 @@ export default {
 	get_by_interview_result_id,
 	update_result,
 	delete_result,
-	get_result_by_user_id,
+	get_result_by_user_id_interview_id,
 	get_by_company_id,
 	register_user_to_interview,
 	send_interview,
