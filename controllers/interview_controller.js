@@ -673,10 +673,16 @@ const delete_result = async (_req, _res) => {
 };
 
 //@desc Get interview result by user id
-//@route GET /api/interview/get_result/:user_id
+//@route GET /api/interview/get_result/:user_id/:interview_id
 //@access Private
-const get_result_by_user_id = async (_req, _res) => {
-	return _res.send("Get By User Id");
+const get_result_by_user_id_interview_id = async (_req, _res) => {
+	const {interview_id, user_id} = _req.params;
+	const interview_result = await interview_result_model.findOne({interview_id, user_id});
+	if (!interview_result) {
+		console.error(chalk.bold(`${getTimestamp()} Status Code : 404 -- Error : Interview Result Not Found -- Service : Get Result By User Id`));
+		return _res.status(404).json({message: "Interview Result Not Found", status_code: "404", status: "error"});
+	}
+	return _res.status(200).json({message: "Interview Result Found", status_code: "200", status: "success", data: interview_result});
 };
 
 const get_result_by_interview_signature = async (_req, _res) => {
@@ -718,6 +724,122 @@ function formatDate(date) {
 	return date.toLocaleDateString("en-US", options);
 }
 
+const finish_interview = async (_req, _res) => {
+  //YAPILDI---- dbden sorulari cekip kontrol et idleri ile
+  //YAPILDI---- interview result model e hangi sorunun dogru , yanlis oldugunu kaydet
+  //YAPILDI---- inteview score da kaydedilecek
+  //YAPILDI---- Redirect ederken cors hatasi aliyor
+  try {
+    const interview_signature = _req.body.interview_signature;
+    const user_answers = _req.body.user_answers;
+
+    let decoded;
+    try {
+      decoded = jwt.verify(
+        atob(interview_signature),
+        process.env.INTERVIEW_PLAYGROUND_SIGN_SECRET
+      );
+    } catch (err) {
+      console.error(chalk.red.bold("Error decoding the interview signature"));
+      throw err;
+    }
+
+    const { interview_id, user_id } = decoded;
+
+    let interview;
+    try {
+      interview = await interview_model.findById(interview_id);
+    } catch (err) {
+      console.error(chalk.red.bold("Error finding the interview by id"));
+      throw err;
+    }
+
+    let user;
+    try {
+      user = await Individual_User.findById(user_id);
+    } catch (err) {
+      console.error(chalk.red.bold("Error finding the user by id"));
+      throw err;
+    }
+
+    let questions = [];
+    try {
+      for (let user_answer of user_answers) {
+        let question, questionObj;
+
+        switch (user_answer.type) {
+          case "Test":
+            question = await test_question_model.findById(user_answer._id);
+            questionObj = question.toObject();
+            questionObj.isTrue = questionObj.answer === user_answer.user_answer;
+            questions.push(questionObj);
+            break;
+          case "Diagram":
+            question = await diagram_question_model.findById(user_answer._id);
+            questionObj = question.toObject();
+
+            questionObj.isTrue = questionObj.answer === user_answer.user_answer;
+            questions.push(questionObj);
+            break;
+          case "Algorithm":
+            question = await algorithm_question_model.findById(user_answer._id);
+            questionObj = question.toObject();
+
+            questionObj.isTrue =
+              questionObj.answer[user_answer.language] ===
+              user_answer.user_answer;
+            questions.push(questionObj);
+            break;
+          default:
+            break;
+        }
+      }
+    } catch (error) {
+      console.error(chalk.red(error));
+    }
+	const score = (100 / questions.length) * questions.filter((question) => question.isTrue).length;
+    //save the interview_result to db
+    const interview_result = await interview_result_model.findOne({
+      interview_id,
+      user_id,
+    });
+    if (!interview_result) {
+      console.error(
+        chalk.bold(
+          `${getTimestamp()} Status Code : 500 -- Error : Interview Result is not found -- Service : Interview Get By Interview Id`
+        )
+      );
+      return _res.status(500).json({
+        message: "Interview Result is not found",
+        status_code: "500",
+        status: "error",
+      });
+    }
+    interview_result.interview_score = score.toFixed(2);
+    interview_result.status = INTERVIEW_RESULT_STATUS_ENUM.EXAMINING;
+    interview_result.questions = questions;
+    await interview_result.save();
+    
+	return _res.status(200).json({
+	  message: "Interview is finished",
+	  status_code: "200",
+	  status: "success",
+	  data: {
+		redirect_path: `/interview/tracker/${interview_signature}`,
+	  },
+	});
+    
+  } catch (err) {
+    console.error(chalk.red.bold("Error finishing the interview"), err);
+    return _res.status(500).json({
+      message: "Error finishing the interview",
+      status_code: "500",
+      status: "error",
+    });
+  }
+};
+
+
 export default {
 	get_all_interview,
 	add_interview,
@@ -730,7 +852,7 @@ export default {
 	get_by_interview_result_id,
 	update_result,
 	delete_result,
-	get_result_by_user_id,
+	get_result_by_user_id_interview_id,
 	get_by_company_id,
 	register_user_to_interview,
 	send_interview,
@@ -738,4 +860,5 @@ export default {
 	login_user_to_interview,
 	get_result_by_interview_signature,
 	update_result_status,
+	finish_interview
 };

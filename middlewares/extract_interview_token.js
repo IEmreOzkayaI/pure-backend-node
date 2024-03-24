@@ -15,7 +15,7 @@ const extract_interview_token = async (_req, _res, _next) => {
 	}
 	try {
     console.log(_req.body.register_type);
-		if ((_req.body.register_type === "Interview")) {
+		if ((_req.body.register_type === "Interview")) { // for interview registration
 			jwt.verify(token, process.env.INTERVIEW_SIGN_SECRET, (err, decoded) => {
 				if (err) {
 					console.error(chalk.bold(`${getTimestamp()} Status Code : 401 -- Error : Unauthorized -- Service : Extract Interview Token`));
