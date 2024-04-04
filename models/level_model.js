@@ -1,18 +1,13 @@
 import mongoose from "mongoose";
-
+import {v4 as uuid} from "uuid";
 const level_schema = new mongoose.Schema({
+    _id: { type: String, default: function genUUID() {
+            return uuid()
+        }},
     name: {
         type: String,
         required: true
     },
-    number: {
-        type: Number,
-        required: true
-    },
-    test_question_list: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Test_Question"
-    }],
     created_at: {
         type: Date,
         default: Date.now
@@ -28,4 +23,4 @@ const level_schema = new mongoose.Schema({
     },
 });
 
-export default mongoose.model("Level", level_schema);
+export default mongoose.model("Level", level_schema , "levels");

@@ -1,24 +1,24 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import http from "http";
 /** Router */
 import user_router from "./routes/user_router.js";
 import question_router from "./routes/question_router.js";
 import challenge_router from "./routes/challenge_router.js";
 import interview_router from "./routes/interview_router.js";
 import certificate_router from "./routes/certificate_router.js";
-import job_type_router from "./routes/job_type_router.js";
 import level_router from "./routes/level_router.js";
 import notification_router from "./routes/notification_router.js";
 import package_router from "./routes/package_router.js";
-import technology_router from "./routes/technology_router.js";
 import token_router from "./routes/token_router.js";
 import credentials from "./middlewares/credentials.js";
 import cors_options from "./config/cors_options.js";
 import {connectDb} from "./config/db_connection.js";
 import dotenv from "dotenv";
+
 /** DB Connection */
-connectDb()
+connectDb();
 
 const app = express();
 dotenv.config();
@@ -26,33 +26,87 @@ dotenv.config();
 /** Request Handler Middlewares */
 app.use(credentials);
 app.use(cors(cors_options));
+app.use(express.urlencoded({extended: false}));
+app.use(express.text({type: "text/plain"}));
 app.use(express.json());
-app.use(express.urlencoded({extended: true}));
 app.use(cookieParser());
 app.disable("x-powered-by");
 
+app.use((req, res, next) => {
+	res.setTimeout(600000, () => {
+		console.error("Request has timed out.");
+		res.status(408).send("Request has timed out.");
+	});
+
+	next();
+});
+
 app.get("/api/user/forgot-password", (_req, _res) => {
 	_res.render("forgot-password");
-})
-
+});
+app.get("/deneme", (_req, _res) => {
+	console.log(_req.headers);
+	_res.send("deneme");
+});
 /** Router Connection */
 app.use("/api/user", user_router);
-app.use("/api/refresh", token_router);
+app.use("/api/access", token_router);
 app.use("/api/question", question_router);
 app.use("/api/challenge", challenge_router);
 app.use("/api/interview", interview_router);
 app.use("/api/certificate", certificate_router);
-app.use("/api/jobType", job_type_router);
 app.use("/api/level", level_router);
 app.use("/api/notification", notification_router);
 app.use("/api/package", package_router);
-app.use("/api/technology", technology_router);
 
-app.use("*", (_req, _res) => {
-	_res.status(404).json({error: "Page not found mu ?"});
+app.use("*", (_req, res) => {
+	res.status(404).send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                .container {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100vw;
+                    height: 100vh;
+                    font-family: Ubuntu, sans-serif;
+                }
+
+                .header {
+                    font-size: 1.5rem;
+                    display: flex;
+                    align-items: center;
+                }
+
+                .bold {
+                    font-size: 1.5rem;
+                    font-weight: bold;
+                    padding: 0 .5rem;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    PURE <span class="bold">|</span> This is main route of the API
+                </div>
+            </div>
+        </body>
+        </html>
+    `);
 });
 
-app.listen(process.env.PORT, () => {
+// Sunucu oluşturma
+const server = http.createServer(app);
+
+// Sunucu zaman aşımını ayarlama
+server.setTimeout(5000); // Örnek olarak sunucu zaman aşımını 5 saniye olarak ayarla
+
+// Sunucuyu dinleme
+server.listen(process.env.PORT, () => {
 	console.log(`Server running on port ${process.env.PORT}`);
 });
 

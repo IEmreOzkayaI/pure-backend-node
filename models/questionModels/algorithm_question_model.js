@@ -1,30 +1,51 @@
 import mongoose from "mongoose";
+import {v4 as uuid} from "uuid";
 
 const algorithm_question_schema = new mongoose.Schema({
+    _id: {
+        type: String, default: function genUUID() {
+            return uuid()
+        }
+    },
+    name: {
+        type: String,
+        required: true,
+    },
     topic: {
         type: String,
         required: true,
     },
-    level_id: {
-        type: mongoose.Schema.Types.ObjectId,
+    level: {
+        type: mongoose.Schema.Types.UUID,
         ref: "Level",
     },
-    jobType_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Job_Type",
-    },
-    technology_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Technology",
-    },
     description: {
+        scenario: {
+            type: String,
+            required: true,
+        },
+        question: {
+            type: String,
+            required: true,
+        },
+    },
+    real_life_application: {
         type: String,
         required: true,
     },
-    whole_code: {
-        // all of the code without answer included
-        type: String,
-        required: true,
+    time_complexity_analysis: {
+        best_case: {
+            type: String,
+            required: true,
+        },
+        worst_case: {
+            type: String,
+            required: true,
+        },
+        average_case: {
+            type: String,
+            required: true,
+        },
     },
     example_input: {
         type: String,
@@ -34,23 +55,74 @@ const algorithm_question_schema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    missing_part: {
-        // the part that is missing from the code
-        type: String,
-        required: true,
+    parameter_list:{
+        javascript: {
+            type: [String],
+            required: true,
+        },
+        python: {
+            type: [String],
+            required: true,
+        },
+        java: {
+            type: [String],
+            required: true,
+        },
+        csharp: {
+            type: [String],
+            required: true,
+        },
     },
-    imported_libraries: [{
-        // the libraries that are imported
-        type: String,
-        required: true,
-    }, ],
+    missing_part: {
+        javascript: {
+            type: String,
+            required: true,
+        },
+        python: {
+            type: String,
+            required: true,
+        },
+        java: {
+            type: String,
+            required: true,
+        },
+        csharp: {
+            type: String,
+            required: true,
+        },
+    },
     answer: {
-        // the answer code
-        type: String,
-        required: true,
+        javascript: {
+            type: String,
+            required: true,
+        },
+        python: {
+            type: String,
+            required: true,
+        },
+        java: {
+            type: String,
+            required: true,
+        },
+        csharp: {
+            type: String,
+            required: true,
+        },
     },
     answer_explanation: {
         type: String,
+        required: true,
+    },
+    test_cases: {
+        type: Array,
+        required: true,
+    },
+    additional_resources_about_algorithm_and_topic: {
+        type: Array,
+        required: true,
+    },
+    interactive_steps: {
+        type: Array,
         required: true,
     },
     created_at: {

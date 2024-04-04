@@ -1,12 +1,18 @@
 import mongoose from "mongoose";
+import {v4 as uuid} from "uuid";
 
 const diagram_question_result_schema = new mongoose.Schema({
-    diagramQuestion_id: {
-        type: mongoose.Schema.Types.ObjectId,
+    _id: {
+        type: String, default: function genUUID() {
+            return uuid()
+        }
+    },
+    diagram_question_id: {
+        type: mongoose.Schema.Types.UUID,
         ref: "Diagram_Question",
     },
     user_id: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.UUID,
         ref: "User",
     },
     user_answer: {
