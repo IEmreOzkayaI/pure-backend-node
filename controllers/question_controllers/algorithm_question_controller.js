@@ -98,17 +98,13 @@ const run_algorithm = async (_req, _res) => {
         } else {
             console.error(chalk.bold(`${getTimestamp()} Status Code : 500 -- Error : Function name not found -- Service : Run Algorithm`));
         }
-        console.log("code", code)
-        console.log("function_parameters", function_parameters);
-        console.log("sibgle paramter", functionName[1]);
-        console.log("first_test_input", first_test_input);
-        console.log("first_test_output", first_test_output);
 
         function_parameters.forEach((parameter) => {
             input = `${parameter} = ${first_test_input}`;
         });
-        code = input + '\n' + code + '\n' + `${print_type}(${functionName[1]}(${function_parameters[0].split(" ")[1]}))`;
-
+        console.error("function_parameters", function_parameters);
+        code = input + '\n' + code + '\n' + `${print_type}(${functionName[1]}(${function_parameters[0]?.split(" ")[1]}))`;
+        console.log("code", code);
 
 
         //create random file name
