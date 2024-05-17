@@ -30,7 +30,7 @@ const access_token = async (_req, _res) => {
                     _res.cookie("access_token", access_token, {
                         maxAge: 60 * 1000,
                         sameSite: "None",
-                        // domain: "localhost",
+                        domain: process.env.DOMAIN,
                         secure: true, // "true" yerine "true" olarak ayarlanmalı
                         httpOnly: true, // "true" yerine "true" olarak ayarlanmalı
                     });

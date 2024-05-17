@@ -103,7 +103,7 @@ const register = async (_req, _res) => {
             _res.cookie("confirm_token", confirm_token, {
                 maxAge: 60 * 60 * 1000,
                 sameSite: "None",
-                // domain: "the-pure.tech",
+				domain: process.env.DOMAIN,
                 secure: true,
                 httpOnly: true,
             }); //------------------
@@ -246,7 +246,7 @@ const re_confirm = async (_req, _res) => {
             _res.cookie("confirm_token", confirm_token, {
                 maxAge: 60 * 60 * 1000,
                 sameSite: "None",
-                // domain: "the-pure.tech",
+				domain: process.env.DOMAIN,
                 secure: true,
                 httpOnly: true,
             });
@@ -331,7 +331,7 @@ const login = async (_req, _res) => {
                 _res.cookie("confirm_token", confirm_token, {
                     maxAge: 60 * 60 * 1000,
                     sameSite: "None",
-                    // domain: "the-pure.tech",
+                    domain: process.env.DOMAIN,
                     secure: true,
                     httpOnly: true,
                 }); //------------------
@@ -383,14 +383,14 @@ const login = async (_req, _res) => {
                 _res.cookie("refresh_token", refresh_token, {
                     maxAge: 60 * 60 * 1000 * 24,
                     sameSite: "None",
-                    // domain: "the-pure.tech",
+                    domain: process.env.DOMAIN,
                     secure: true, // "true" yerine "true" olarak ayarlanmalı
                     httpOnly: true, // "true" yerine "true" olarak ayarlanmalı
                 });
                 _res.cookie("access_token", access_token, {
                     maxAge: 60 * 1000, // 1 minute
                     sameSite: "None",
-                    // domain: "the-pure.tech",
+                    domain: process.env.DOMAIN,
                     secure: true, // "true" yerine "true" olarak ayarlanmalı
                     httpOnly: true, // "true" yerine "true" olarak ayarlanmalı
                 });

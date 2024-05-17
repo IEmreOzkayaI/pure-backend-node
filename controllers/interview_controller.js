@@ -146,7 +146,7 @@ const get_by_interview_signature = async (_req, _res) => {
 	end_date = new Date(end_date[2], end_date[1] - 1, end_date[0]);
 	const reachable_time = Math.floor((new Date() - end_date) / 1000);
 	let interview_share_link = jwt.sign({interview_id: interview._id}, process.env.INTERVIEW_SIGN_SECRET, {expiresIn: reachable_time});
-	interview_share_link = `${_req.protocol}://localhost:3000/interview/signUp/${btoa(interview_share_link)}`;
+	interview_share_link = `${_req.protocol}://${process.env.MAIN_ROUTE}/interview/signUp/${btoa(interview_share_link)}`;
 	const read_interview_dto = {
 		name: interview.name,
 		description: interview.description,
@@ -200,7 +200,7 @@ const get_by_interview_id = async (_req, _res) => {
 	end_date = new Date(end_date[2], end_date[1] - 1, end_date[0]);
 	const reachable_time = Math.floor((new Date() - end_date) / 1000);
 	let interview_share_link = jwt.sign({interview_id: interview._id}, process.env.INTERVIEW_SIGN_SECRET, {expiresIn: reachable_time});
-	interview_share_link = `${_req.protocol}://localhost:3000/interview/signUp/${btoa(interview_share_link)}`; //TODO: FİX THE HOST
+	interview_share_link = `${_req.protocol}://${process.env.MAIN_ROUTE}/interview/signUp/${btoa(interview_share_link)}`; //TODO: FİX THE HOST
 	const read_interview_dto = {
 		_id: interview._id,
 		name: interview.name,
@@ -459,7 +459,7 @@ const send_interview = async (_req, _res) => {
 				end_date = new Date(end_date[2], end_date[1] - 1, end_date[0]);
 				const reachable_time = Math.floor((new Date() - end_date) / 1000);
 				let interview_solve_link = jwt.sign({user_id: user._id, interview_id: interview._id}, process.env.INTERVIEW_PLAYGROUND_SIGN_SECRET, {expiresIn: reachable_time});
-				interview_solve_link = `${_req.protocol}://localhost:3000/interview/login/${btoa(interview_solve_link)}`;
+				interview_solve_link = `${_req.protocol}://${process.env.MAIN_ROUTE}/interview/login/${btoa(interview_solve_link)}`;
 				send_email(user.email, "Interview Link", "interview_solve_link", interview_solve_link);
 			} else {
 				console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : User ${user._id} Not Found In Interview -- Service : Send Interview`));
@@ -547,24 +547,24 @@ const login_user_to_interview = async (_req, _res) => {
 		const interview_time = parseInt(interview.interview_time.split(":")[0]) + 10 + "m";
 
 		//----- IF Interview Time is Over or Already Completed
-		const interview_result = await interview_result_model.findOne({interview_id: _req.interview_signature_info.interview_id, user_id: _req.interview_signature_info.user_id});
-		if (interview_result) {
-			const currentTime = new Date();
-			const interviewCreationTime = new Date(interview_result.created_at);
-			const [minutes, seconds] = interview.interview_time.split(":").map(Number);
-			const totalInterviewTime = (minutes * 60 + seconds) * 1000;
-			const elapsedTime = currentTime - interviewCreationTime;
-			const is_interview_time_expired = elapsedTime > totalInterviewTime;
-			if (interview_result.status === INTERVIEW_RESULT_STATUS_ENUM.REGISTERED || is_interview_time_expired) {
-				console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Interview is already registered -- Service : Interview Get By Interview Id`));
-				return _res.status(400).json({
-					message: "Interview is already registered",
-					status_code: "400",
-					status: "success",
-					data: interview_result,
-				});
-			}
-		}
+		// const interview_result = await interview_result_model.findOne({interview_id: _req.interview_signature_info.interview_id, user_id: _req.interview_signature_info.user_id});
+		// if (interview_result) {
+		// 	const currentTime = new Date();
+		// 	const interviewCreationTime = new Date(interview_result.created_at);
+		// 	const [minutes, seconds] = interview.interview_time.split(":").map(Number);
+		// 	const totalInterviewTime = (minutes * 60 + seconds) * 1000;
+		// 	const elapsedTime = currentTime - interviewCreationTime;
+		// 	const is_interview_time_expired = elapsedTime > totalInterviewTime;
+		// 	if ((interview_result.status === INTERVIEW_RESULT_STATUS_ENUM.REGISTERED || interview_result.status?.name === INTERVIEW_RESULT_STATUS_ENUM.REGISTERED) || is_interview_time_expired) {
+		// 		console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Interview is already registered -- Service : Interview Get By Interview Id`));
+		// 		return _res.status(400).json({
+		// 			message: "Interview is already registered",
+		// 			status_code: "400",
+		// 			status: "success",
+		// 			data: interview_result,
+		// 		});
+		// 	}
+		// }
 
 		//----- JWT Token Create
 		const access_token = jwt.sign(
@@ -598,14 +598,14 @@ const login_user_to_interview = async (_req, _res) => {
 			_res.cookie("refresh_token", refresh_token, {
 				maxAge: maxAgeInMilliseconds,
 				sameSite: "None",
-				//domain: "the-pure.tech",
+				domain: process.env.DOMAIN,
 				secure: true, // "true" yerine "true" olarak ayarlanmalı
 				httpOnly: true, // "true" yerine "true" olarak ayarlanmalı
 			});
 			_res.cookie("access_token", access_token, {
 				maxAge: 60 * 1000, // 1 minute
 				sameSite: "None",
-				//domain: "the-pure.tech",
+				domain: process.env.DOMAIN,
 				secure: true, // "true" yerine "true" olarak ayarlanmalı
 				httpOnly: true, // "true" yerine "true" olarak ayarlanmalı
 			});
@@ -617,6 +617,24 @@ const login_user_to_interview = async (_req, _res) => {
 					return _res.status(503).json({message: "Server Error", status_code: "503", status: "error"});
 				}
 			}
+			if (is_interview_result_exist) {
+				const currentTime = new Date();
+				const interviewCreationTime = new Date(is_interview_result_exist.created_at);
+				const [minutes, seconds] = interview.interview_time.split(":").map(Number);
+				const totalInterviewTime = (minutes * 60 + seconds) * 1000;
+				const elapsedTime = currentTime - interviewCreationTime;
+				const is_interview_time_expired = elapsedTime > totalInterviewTime;
+				if ((is_interview_result_exist.status === INTERVIEW_RESULT_STATUS_ENUM.REGISTERED ||is_interview_result_exist.status?.name === INTERVIEW_RESULT_STATUS_ENUM.REGISTERED) || is_interview_time_expired) {
+					console.error(chalk.bold(`${getTimestamp()} Status Code : 400 -- Error : Interview is already registered -- Service : Interview Get By Interview Id`));
+					return _res.status(400).json({
+						message: "Interview is already registered",
+						status_code: "400",
+						status: "success",
+						data: is_interview_result_exist,
+					});
+				}
+			}
+
 
 			console.info(chalk.green.bold(`${getTimestamp()} Status Code : 200 -- Info : User Authenticated -- ID : ${is_user_available.check_user_availability._id}`));
 			return _res.status(200).json({
@@ -816,7 +834,7 @@ const finish_interview = async (_req, _res) => {
       });
     }
     interview_result.interview_score = score.toFixed(2);
-    interview_result.status = INTERVIEW_RESULT_STATUS_ENUM.EXAMINING;
+    interview_result.status = INTERVIEW_RESULT_STATUS_ENUM.REGISTERED;
     interview_result.questions = questions;
     await interview_result.save();
     

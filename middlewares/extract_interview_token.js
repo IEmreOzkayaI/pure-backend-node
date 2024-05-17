@@ -14,7 +14,6 @@ const extract_interview_token = async (_req, _res, _next) => {
 		return _res.status(401).json({message: "No Valid Token"});
 	}
 	try {
-    console.log(_req.body.register_type);
 		if ((_req.body.register_type === "Interview")) { // for interview registration
 			jwt.verify(token, process.env.INTERVIEW_SIGN_SECRET, (err, decoded) => {
 				if (err) {
