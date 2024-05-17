@@ -598,14 +598,14 @@ const login_user_to_interview = async (_req, _res) => {
 			_res.cookie("refresh_token", refresh_token, {
 				maxAge: maxAgeInMilliseconds,
 				sameSite: "None",
-				//domain: "the-pure.tech",
+				domain: process.env.DOMAIN,
 				secure: true, // "true" yerine "true" olarak ayarlanmalı
 				httpOnly: true, // "true" yerine "true" olarak ayarlanmalı
 			});
 			_res.cookie("access_token", access_token, {
 				maxAge: 60 * 1000, // 1 minute
 				sameSite: "None",
-				//domain: "the-pure.tech",
+				domain: process.env.DOMAIN,
 				secure: true, // "true" yerine "true" olarak ayarlanmalı
 				httpOnly: true, // "true" yerine "true" olarak ayarlanmalı
 			});
